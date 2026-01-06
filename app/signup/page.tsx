@@ -23,7 +23,9 @@ export default function SignupPage() {
 
     const newFieldErrors: Record<string, string> = {};
 
-    if (!email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail || !/^[^@]+@[^@]+\.[^@]+$/.test(trimmedEmail)) {
       newFieldErrors.email = "유효한 이메일 주소를 입력해주세요.";
     }
 
