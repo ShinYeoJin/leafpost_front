@@ -48,10 +48,10 @@ export async function signup(payload: SignupRequest): Promise<SignupResponse> {
 
 /**
  * 로그인
- * 백엔드 라우트: POST /api/users/login
+ * 백엔드 라우트: POST /api/auth/login
  */
 export async function login(email: string, password: string): Promise<LoginResponse> {
-  const response = await apiFetch<LoginResponse>("/users/login", {
+  const response = await apiFetch<LoginResponse>("/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),
   });
