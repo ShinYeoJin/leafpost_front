@@ -8,8 +8,10 @@ import { handleApiError } from "@/lib/api/handleApiError";
 export default function SignupPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
+  const [nickname, setNickname] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [profileImage, setProfileImage] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -19,8 +21,26 @@ export default function SignupPage() {
     setError(null);
     setFieldErrors({});
 
-    if (password !== confirmPassword) {
-      setError("비밀번호가 일치하지 않습니다.");
+    const newFieldErrors: Record<string, string> = {};
+
+    if (!email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+      newFieldErrors.email = "유효한 이메일 주소를 입력해주세요.";
+    }
+
+    if (!password || password.length < 8) {
+      newFieldErrors.password = "비밀번호는 최소 8자 이상이어야 합니다.";
+    }
+
+    if (!nickname.trim()) {
+      newFieldErrors.nickname = "닉네임을 입력해주세요.";
+    }
+
+    if (!confirmPassword || password !== confirmPassword) {
+      newFieldErrors.confirmPassword = "비밀번호가 일치하지 않습니다.";
+    }
+
+    if (Object.keys(newFieldErrors).length > 0) {
+      setFieldErrors(newFieldErrors);
       return;
     }
 
@@ -32,10 +52,18 @@ export default function SignupPage() {
         setIsLoading(true);
         setError(null);
         setFieldErrors({});
-        
+
+        const formData = new FormData();
+        formData.append("email", email);
+        formData.append("password", password);
+        formData.append("nickname", nickname);
+        if (profileImage) {
+          formData.append("profileImage", profileImage);
+        }
+
         const response = await apiFetch<{ accessToken?: string; refreshToken?: string }>("/users/signup", {
           method: "POST",
-          body: JSON.stringify({ email, password }),
+          body: formData,
         });
 
         if (response.data?.accessToken) {
@@ -64,9 +92,17 @@ export default function SignupPage() {
 
     try {
       // POST /users/signup 호출 (백엔드 라우트와 일관성 유지)
+      const formData = new FormData();
+      formData.append("email", email);
+      formData.append("password", password);
+      formData.append("nickname", nickname);
+      if (profileImage) {
+        formData.append("profileImage", profileImage);
+      }
+
       const response = await apiFetch<{ accessToken?: string; refreshToken?: string }>("/users/signup", {
           method: "POST",
-          body: JSON.stringify({ email, password }),
+          body: formData,
         });
 
       // 회원가입 성공 시 accessToken 저장
@@ -154,6 +190,40 @@ export default function SignupPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label
+                htmlFor="nickname"
+                className="block text-sm font-semibold mb-2 text-sky-600"
+              >
+                닉네임
+              </label>
+              <input
+                id="nickname"
+                type="text"
+                value={nickname}
+                onChange={(e) => {
+                  setNickname(e.target.value);
+                  if (fieldErrors.nickname) {
+                    setFieldErrors((prev) => {
+                      const newErrors = { ...prev };
+                      delete newErrors.nickname;
+                      return newErrors;
+                    });
+                  }
+                }}
+                required
+                disabled={isLoading}
+                className={`w-full px-4 py-3 border-2 rounded-xl bg-white text-zinc-800 
+                          focus:outline-none focus:ring-2 focus:ring-sky-300 
+                          disabled:opacity-50 disabled:cursor-not-allowed transition-all
+                          ${fieldErrors.nickname ? "border-red-300 focus:border-red-300" : "border-yellow-200 focus:border-sky-300"}`}
+                placeholder="닉네임을 입력하세요"
+              />
+              {fieldErrors.nickname && (
+                <p className="text-sm text-red-600 mt-1">{fieldErrors.nickname}</p>
+              )}
+            </div>
+
             <div>
               <label
                 htmlFor="email"
@@ -253,6 +323,36 @@ export default function SignupPage() {
               />
               {fieldErrors.confirmPassword && (
                 <p className="text-sm text-red-600 mt-1">{fieldErrors.confirmPassword}</p>
+              )}
+            </div>
+
+            <div>
+              <label
+                htmlFor="profileImage"
+                className="block text-sm font-semibold mb-2 text-sky-600"
+              >
+                프로필 이미지 (선택)
+              </label>
+              <input
+                id="profileImage"
+                type="file"
+                accept="image/*"
+                disabled={isLoading}
+                onChange={(e) => {
+                  const file = e.target.files?.[0] ?? null;
+                  setProfileImage(file);
+                  if (fieldErrors.profileImage) {
+                    setFieldErrors((prev) => {
+                      const newErrors = { ...prev };
+                      delete newErrors.profileImage;
+                      return newErrors;
+                    });
+                  }
+                }}
+                className="block w-full text-sm text-zinc-700 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-100 file:text-yellow-800 hover:file:bg-yellow-200 cursor-pointer"
+              />
+              {fieldErrors.profileImage && (
+                <p className="text-sm text-red-600 mt-1">{fieldErrors.profileImage}</p>
               )}
             </div>
 

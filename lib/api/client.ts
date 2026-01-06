@@ -40,18 +40,29 @@ export async function apiFetch<T = unknown>(
 ): Promise<ApiResponse<T>> {
   const { accessToken, onUnauthorized, headers, ...fetchConfig } = config;
 
+  const isFormData = fetchConfig.body instanceof FormData;
+
   const requestHeaders: Record<string, string> = {
-    "Content-Type": "application/json",
     ...(headers as Record<string, string>),
   };
 
-  if (accessToken) requestHeaders["Authorization"] = `Bearer ${accessToken}`;
+  // FormData를 사용할 때는 브라우저가 적절한 Content-Type을 설정하므로 명시적으로 설정하지 않습니다.
+  if (!isFormData) {
+    requestHeaders["Content-Type"] = "application/json";
+  }
+
+  if (accessToken) {
+    requestHeaders["Authorization"] = `Bearer ${accessToken}`;
+  }
 
   try {
-    const response = await fetch(path.startsWith("http") ? path : `${BASE_URL}${path}`, {
-      ...fetchConfig,
-      headers: requestHeaders,
-    });
+    const response = await fetch(
+      path.startsWith("http") ? path : `${BASE_URL}${path}`,
+      {
+        ...fetchConfig,
+        headers: requestHeaders,
+      }
+    );
 
     if (response.status === 401 && onUnauthorized) {
       await onUnauthorized();
