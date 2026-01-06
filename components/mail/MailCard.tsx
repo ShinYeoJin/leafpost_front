@@ -107,7 +107,7 @@ export default function MailCard({
         villagerId,
         subject,
         content,
-      }) as { transformedText?: string; imageUrl?: string };
+      });
 
       // 서버에서 반환한 imageUrl 처리
       if (response.imageUrl) {
@@ -167,7 +167,7 @@ export default function MailCard({
         subject,
         content,
         scheduledAt: scheduledAt.toISOString(),
-      } as { scheduledAt?: string }) as { transformedText?: string; imageUrl?: string };
+      });
 
       // 서버에서 반환한 imageUrl 처리
       if (response.imageUrl) {
