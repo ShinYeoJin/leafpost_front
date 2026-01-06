@@ -31,7 +31,7 @@ export class ApiClientError extends Error {
 }
 
 // ----------------------
-export const BASE_URL = "https://leaf-post-back.onrender.com";
+export const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 
 
 export async function apiFetch<T = unknown>(
