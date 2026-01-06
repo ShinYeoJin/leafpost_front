@@ -69,7 +69,7 @@ export default function EntryPage() {
                        hover:from-yellow-200 hover:to-yellow-250 transform hover:scale-105
                        transition-all duration-200 border-2 border-yellow-200 active:scale-95"
             >
-              <span className="mr-2">✨</span>회원가입
+              <span className="mr-2">👋</span>회원가입
             </button>
           </div>
           

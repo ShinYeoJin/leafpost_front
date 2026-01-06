@@ -143,10 +143,20 @@ export default function SignupPage() {
       <div className="absolute top-1/2 right-1/4 w-16 h-16 bg-yellow-200 rounded-full opacity-35 blur-lg"></div>
 
       <div className="w-full max-w-md relative z-10">
-        <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-8 sm:p-10 border-4 border-yellow-100">
+        <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-8 sm:p-10 border-4 border-yellow-100 relative">
+          {/* 메인으로 돌아가기 버튼 (카드 내부 왼쪽 상단) */}
+          <button
+            type="button"
+            onClick={() => router.push("/")}
+            className="absolute top-2 left-2 px-3 py-1.5 rounded-xl bg-white/90 border border-yellow-200 shadow-md text-xs sm:text-sm text-sky-600 font-semibold flex items-center gap-1 hover:bg-sky-50 hover:border-sky-200 transition-all z-10"
+          >
+            <span>🏠</span>
+            <span>메인 페이지</span>
+            <span>🏠</span>
+          </button>
           {/* 제목 영역 */}
           <div className="text-center mb-8">
-            <div className="text-5xl mb-3">✨</div>
+            <div className="text-5xl mb-3">👋</div>
             <h2 className="text-3xl sm:text-4xl font-bold mb-2 bg-gradient-to-b from-sky-400 via-sky-300 to-yellow-300 bg-clip-text text-transparent">
               회원가입
             </h2>
