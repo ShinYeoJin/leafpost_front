@@ -13,14 +13,6 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // 로그인/회원가입 페이지: 토큰이 있으면 /main으로 리다이렉트
-  if (pathname === "/login" || pathname === "/signup") {
-    if (accessToken) {
-      const mainUrl = new URL("/main", request.url);
-      return NextResponse.redirect(mainUrl);
-    }
-  }
-
   return NextResponse.next();
 }
 
