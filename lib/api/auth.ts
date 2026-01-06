@@ -36,12 +36,10 @@ export const BASE_URL = "https://leaf-post-back.onrender.com/api";
 
 /**
  * 회원가입
- * @param email 사용자 이메일
- * @param password 비밀번호
- * @param name 사용자 이름
+ * 백엔드 라우트: POST /api/users/signup
  */
 export async function signup(payload: SignupRequest): Promise<SignupResponse> {
-  const response = await apiFetch<SignupResponse>("/auth/signup", {
+  const response = await apiFetch<SignupResponse>("/users/signup", {
     method: "POST",
     body: JSON.stringify(payload),
   });
@@ -50,11 +48,10 @@ export async function signup(payload: SignupRequest): Promise<SignupResponse> {
 
 /**
  * 로그인
- * @param email 이메일
- * @param password 비밀번호
+ * 백엔드 라우트: POST /api/users/login
  */
 export async function login(email: string, password: string): Promise<LoginResponse> {
-  const response = await apiFetch<LoginResponse>("/auth/login", {
+  const response = await apiFetch<LoginResponse>("/users/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),
   });

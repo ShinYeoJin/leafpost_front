@@ -33,7 +33,7 @@ export default function SignupPage() {
         setError(null);
         setFieldErrors({});
         
-        const response = await apiFetch<{ accessToken?: string; refreshToken?: string }>("/auth/signup", {
+        const response = await apiFetch<{ accessToken?: string; refreshToken?: string }>("/users/signup", {
           method: "POST",
           body: JSON.stringify({ email, password }),
         });
@@ -63,8 +63,8 @@ export default function SignupPage() {
     };
 
     try {
-      // POST /auth/signup 호출 (login과 동일한 패턴)
-      const response = await apiFetch<{ accessToken?: string; refreshToken?: string }>("/auth/signup", {
+      // POST /users/signup 호출 (백엔드 라우트와 일관성 유지)
+      const response = await apiFetch<{ accessToken?: string; refreshToken?: string }>("/users/signup", {
           method: "POST",
           body: JSON.stringify({ email, password }),
         });

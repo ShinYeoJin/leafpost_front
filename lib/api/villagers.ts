@@ -15,14 +15,14 @@ export type Villager = {
 };
 
 export async function getVillagers(): Promise<Villager[]> {
-  const response = await apiFetch<Villager[]>("/api/villagers", {
+  const response = await apiFetch<Villager[]>("/villagers", {
     method: "GET",
   });
   return response.data;
 }
 
 export async function getVillagerById(id: number): Promise<Villager> {
-  const response = await apiFetch<Villager>(`/api/villagers/${id}`, {
+  const response = await apiFetch<Villager>(`/villagers/${id}`, {
     method: "GET",
   });
   return response.data;
