@@ -1,28 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function EntryPage() {
   const router = useRouter();
-  const [isChecking, setIsChecking] = useState(true);
-
-  useEffect(() => {
-    const accessToken = localStorage.getItem("accessToken");
-    if (accessToken) {
-      router.push("/main");
-    } else {
-      setIsChecking(false);
-    }
-  }, [router]);
-
-  if (isChecking) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-sky-100 via-green-50 to-yellow-50">
-        <div className="text-green-500 font-semibold text-lg animate-pulse">로딩 중...</div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-sky-100 via-green-50 to-yellow-50 relative overflow-hidden">
