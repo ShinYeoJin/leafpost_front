@@ -19,8 +19,26 @@ export type SendEmailResponse = {
 // GET
 export async function getEmails(status?: EmailStatus): Promise<Email[]> {
   const url = status ? `/emails?status=${status}` : `/emails`;
-  const response = await apiFetch<Email[]>(url, { method: "GET" });
-  return response.data;
+  const response = await apiFetch<unknown>(url, { method: "GET" });
+
+  const raw = response.data as any;
+
+  // 백엔드 응답이 배열 또는 { data: [...] }, { items: [...] } 등일 수 있으므로 안전하게 처리
+  if (Array.isArray(raw)) {
+    return raw as Email[];
+  }
+  if (raw && Array.isArray(raw.data)) {
+    return raw.data as Email[];
+  }
+  if (raw && Array.isArray(raw.items)) {
+    return raw.items as Email[];
+  }
+  if (raw && Array.isArray(raw.results)) {
+    return raw.results as Email[];
+  }
+
+  // 그 외의 경우에는 빈 배열 반환 (런타임 오류 방지)
+  return [];
 }
 
 // POST
