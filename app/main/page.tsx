@@ -116,7 +116,7 @@ export default function MainPage() {
                 name={villager.name}
                 imageUrl={villager.imageUrl}
                 isPopular={false}
-                exampleSentence={villager.catchphrase ?? ""}
+                exampleSentence={villager.toneExample}
               />
             </div>
           ))}
@@ -167,10 +167,10 @@ export default function MainPage() {
 
             {/* MailCardForm 컴포넌트 */}
             <MailCardForm
-              villagerStickerUrl={selectedVillager.iconUrl || selectedVillager.imageUrl}
+              villagerStickerUrl={selectedVillager.imageUrl}
               villagerName={selectedVillager.name}
               villagerId={selectedVillager.id}
-              villagerCatchphrase={selectedVillager.catchphrase || ""}
+              villagerCatchphrase={selectedVillager.toneExample}
               onSendNow={handleSendNow}
               onScheduleSend={handleScheduleSend}
             />

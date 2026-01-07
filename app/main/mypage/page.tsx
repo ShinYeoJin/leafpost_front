@@ -91,7 +91,7 @@ export default function MyPage() {
     // 유저가 작성한 원본 내용을 표시 (previewContent가 아닌 content 사용)
     const speechBubbleText = email.content || email.previewContent || "";
 
-    // 주민 이미지 찾기 (iconUrl 우선, 없으면 imageUrl 사용)
+    // 주민 이미지 찾기
     const villager = villagers.find((v) => v.id === email.villagerId);
     const villagerStickerUrl = villager?.iconUrl || villager?.imageUrl || "";
 
