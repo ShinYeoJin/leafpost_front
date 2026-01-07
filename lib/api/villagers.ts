@@ -14,23 +14,71 @@ export type Villager = {
   iconUrl: string;
 };
 
-export async function getVillagers(): Promise<Villager[]> {
+export type GetVillagersResponse = {
+  villagers: Villager[];
+  isValid: boolean;
+};
+
+/**
+ * Villager 객체가 유효한지 검증하는 헬퍼 함수
+ * 백엔드에서 실제 배열이 내려올 때 타입 안정성을 보장
+ */
+function isValidVillager(item: any): item is Villager {
+  return (
+    typeof item === "object" &&
+    item !== null &&
+    typeof item.id === "number" &&
+    typeof item.name === "string" &&
+    typeof item.imageUrl === "string"
+  );
+}
+
+/**
+ * 배열 내부의 각 항목이 유효한 Villager인지 검증
+ */
+function validateVillagersArray(arr: any[]): Villager[] {
+  return arr.filter(isValidVillager);
+}
+
+export async function getVillagers(): Promise<GetVillagersResponse> {
   const response = await apiFetch<unknown>("/villagers", {
     method: "GET",
   });
 
   const raw = response.data as any;
 
-  // 백엔드 응답이 배열 또는 { data: [...] } 형태 모두 대응
+  // 케이스 1: 응답이 직접 배열인 경우
   if (Array.isArray(raw)) {
-    return raw as Villager[];
-  }
-  if (raw && Array.isArray(raw.data)) {
-    return raw.data as Villager[];
+    const validatedVillagers = validateVillagersArray(raw);
+    return {
+      villagers: validatedVillagers,
+      isValid: true,
+    };
   }
 
-  // 그 외의 경우에는 빈 배열 반환 (런타임 오류 방지)
-  return [];
+  // 케이스 2: { data: [...] } 형태인 경우
+  if (raw && typeof raw === "object" && raw.data) {
+    // data가 배열인지 확인
+    if (Array.isArray(raw.data)) {
+      const validatedVillagers = validateVillagersArray(raw.data);
+      return {
+        villagers: validatedVillagers,
+        isValid: true,
+      };
+    }
+    // data가 문자열이거나 다른 형태인 경우 (현재 더미 응답)
+    // 예: { "success": true, "data": "This action returns all villagers" }
+    return {
+      villagers: [],
+      isValid: false,
+    };
+  }
+
+  // 케이스 3: 예상치 못한 형태
+  return {
+    villagers: [],
+    isValid: false,
+  };
 }
 
 export async function getVillagerById(id: number): Promise<Villager> {
