@@ -1,18 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import VillagerCard from "@/components/villagers/VillagerCard";
-import { useVillager } from "@/hooks/useVillager";
+import MailCard from "@/components/mail/MailCard";
 import { getVillagers, type Villager as ApiVillager } from "@/lib/api/villagers";
 
 export default function MainPage() {
-  const router = useRouter();
-  const { setVillager } = useVillager();
   const [villagers, setVillagers] = useState<ApiVillager[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isValidResponse, setIsValidResponse] = useState<boolean>(true);
+  const [selectedVillager, setSelectedVillager] = useState<ApiVillager | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchVillagers = async () => {
@@ -43,9 +42,24 @@ export default function MainPage() {
     fetchVillagers();
   }, []);
 
-  const handleVillagerClick = (villagerId: number) => {
-    setVillager(villagerId);
-    router.push(`/villagers/${villagerId}`);
+  const handleVillagerClick = (villager: ApiVillager) => {
+    setSelectedVillager(villager);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedVillager(null);
+  };
+
+  const handleSendNow = () => {
+    // 이메일 전송 완료 후 모달 닫기 (MailCard 내부에서 처리됨)
+    // 필요시 추가 로직 구현
+  };
+
+  const handleScheduleSend = (scheduledDate: Date) => {
+    // 예약 전송 완료 후 모달 닫기 (MailCard 내부에서 처리됨)
+    // 필요시 추가 로직 구현
   };
 
   return (
@@ -85,7 +99,7 @@ export default function MainPage() {
           {villagers.map((villager) => (
             <div
               key={villager.id}
-              onClick={() => handleVillagerClick(villager.id)}
+              onClick={() => handleVillagerClick(villager)}
               className="cursor-pointer transition-transform hover:scale-105"
             >
               <VillagerCard
@@ -103,6 +117,53 @@ export default function MainPage() {
       {!isLoading && !error && isValidResponse && villagers.length === 0 && (
         <div className="col-span-full text-center py-12">
           <p className="text-zinc-500">아직 선택 가능한 주민이 없습니다.</p>
+        </div>
+      )}
+
+      {/* 이메일 송신 모달 */}
+      {isModalOpen && selectedVillager && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-sm"
+          onClick={handleCloseModal}
+        >
+          <div 
+            className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 모달 닫기 버튼 */}
+            <button
+              onClick={handleCloseModal}
+              className="absolute top-4 right-4 z-10 p-2 bg-white/90 dark:bg-zinc-900/90 rounded-full 
+                         hover:bg-white dark:hover:bg-zinc-800 transition-colors shadow-lg
+                         focus:outline-none focus:ring-2 focus:ring-zinc-500"
+              aria-label="모달 닫기"
+            >
+              <svg
+                className="w-6 h-6 text-zinc-900 dark:text-zinc-50"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+
+            {/* MailCard 컴포넌트 */}
+            <MailCard
+              villagerStickerUrl={selectedVillager.iconUrl || selectedVillager.imageUrl}
+              villagerName={selectedVillager.name}
+              speechBubbleText={selectedVillager.catchphrase || ""}
+              villagerId={selectedVillager.id}
+              originalText=""
+              onSendNow={handleSendNow}
+              onScheduleSend={handleScheduleSend}
+            />
+          </div>
         </div>
       )}
     </div>
