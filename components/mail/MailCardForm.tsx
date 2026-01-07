@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import { sendEmail } from "@/lib/api/emails";
 
 type MailCardFormProps = {
@@ -175,24 +174,20 @@ export default function MailCardForm({
       <div className="flex items-start gap-4 mb-6">
         <div className="relative w-20 h-20 flex-shrink-0">
           {isSending ? (
-            <div className="w-full h-full flex items-center justify-center bg-sky-100 rounded-full animate-pulse border-2 border-sky-200">
-              <Image
+            <div className="w-full h-full flex items-center justify-center bg-sky-100 rounded-full animate-pulse border-2 border-sky-200 overflow-hidden">
+              <img
                 src={villagerStickerUrl}
                 alt={villagerName}
-                width={80}
-                height={80}
-                className="object-contain rounded-full animate-spin"
+                className="w-full h-full object-contain rounded-full animate-spin"
                 style={{ animationDuration: "2s" }}
               />
             </div>
           ) : (
             <div className="w-full h-full rounded-full border-2 border-sky-200 overflow-hidden">
-              <Image
+              <img
                 src={villagerStickerUrl}
                 alt={villagerName}
-                width={80}
-                height={80}
-                className="object-contain rounded-full"
+                className="w-full h-full object-contain rounded-full"
               />
             </div>
           )}

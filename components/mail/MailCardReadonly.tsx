@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 
 type MailCardReadonlyProps = {
   backgroundUrl?: string;
@@ -118,15 +117,11 @@ function VillagerHeaderImage({ villagerStickerUrl, villagerName, hovered }: Vill
     <div className="flex flex-col items-center gap-2">
       <div className={`relative transition-all duration-300 ease-in-out
                       ${hovered ? 'scale-110' : 'scale-100'}`}>
-        <div className="relative drop-shadow-xl">
-          <Image
+        <div className="relative drop-shadow-xl w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full overflow-hidden border-4 border-white shadow-lg">
+          <img
             src={villagerStickerUrl}
             alt={villagerName}
-            width={112}
-            height={112}
-            className="object-contain rounded-full transition-opacity duration-300
-                       border-4 border-white shadow-lg w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28
-                       ${hovered ? 'opacity-100' : 'opacity-90'}" 
+            className="w-full h-full object-cover"
           />
         </div>
       </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 
 type VillagerCardProps = {
   name: string;
@@ -23,12 +22,10 @@ export default function VillagerCard({
       <div className="bg-white rounded-lg shadow-md overflow-hidden border-2 border-sky-100 transition-transform duration-200 hover:shadow-lg hover:scale-105">
         <div className="relative w-full aspect-square bg-sky-50">
           {!imageError ? (
-            <Image
+            <img
               src={imageUrl}
               alt={name}
-              fill
-              className="object-cover"
-              sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+              className="w-full h-full object-cover"
               onError={() => setImageError(true)}
             />
           ) : (

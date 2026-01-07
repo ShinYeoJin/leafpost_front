@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef } from "react";
-import Image from "next/image";
 
 type ProfileEditProps = {
   initialNickname: string;
@@ -68,11 +67,10 @@ export default function ProfileEdit({
       <div className="flex flex-col items-center gap-4">
         <div className="relative w-24 h-24 rounded-full overflow-hidden bg-sky-100 border-4 border-sky-200 flex-shrink-0">
           {previewImage ? (
-            <Image
+            <img
               src={previewImage}
               alt="프로필 미리보기"
-              fill
-              className="object-cover"
+              className="w-full h-full object-cover"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-4xl bg-gradient-to-br from-sky-200 to-yellow-200">

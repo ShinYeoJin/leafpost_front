@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import Image from "next/image";
 import { previewEmail, sendEmail } from "@/lib/api/emails";
 
 type MailCardProps = {
@@ -397,11 +396,10 @@ function Background({ backgroundUrl }: BackgroundProps) {
   return (
     <div className="relative w-full h-64 sm:h-72 md:h-80 lg:h-96 overflow-hidden">
       {backgroundUrl ? (
-        <Image 
-          src={backgroundUrl} 
-          alt="Background" 
-          fill 
-          className="object-cover transition-transform duration-500 hover:scale-110" 
+        <img
+          src={backgroundUrl}
+          alt="Background"
+          className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
         />
       ) : (
         <div className="w-full h-full bg-gradient-to-br from-zinc-100 to-zinc-200 
@@ -465,14 +463,11 @@ function VillagerSticker({
             <span className="text-xs text-zinc-500 dark:text-zinc-400">이미지 없음</span>
           </div>
         ) : (
-          <Image
+          <img
             src={villagerStickerUrl}
             alt={villagerName}
-            width={120}
-            height={120}
             className="object-contain transition-transform duration-300
                        w-[120px] h-[120px] sm:w-[140px] sm:h-[140px] md:w-[160px] md:h-[160px]"
-            sizes="(max-width: 640px) 120px, (max-width: 768px) 140px, 160px"
             onLoad={handleImageLoad}
             onError={handleImageError}
           />
