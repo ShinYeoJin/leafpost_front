@@ -18,14 +18,14 @@ export default function VillagerCard({
   const [imageError, setImageError] = useState(false);
 
   return (
-    <div className="relative group">
-      <div className="bg-white rounded-lg shadow-md overflow-hidden border-2 border-sky-100 transition-transform duration-200 hover:shadow-lg hover:scale-105">
-        <div className="relative w-full aspect-square bg-sky-50">
+    <div className="relative group h-full">
+      <div className="bg-white rounded-xl shadow-md overflow-hidden border-2 border-sky-100 transition-transform duration-200 hover:shadow-lg hover:scale-105 h-full flex flex-col">
+        <div className="relative w-full pt-3 px-3">
           {!imageError ? (
             <img
               src={imageUrl}
               alt={name}
-              className="w-full h-full object-cover"
+              className="w-full h-32 sm:h-36 md:h-40 object-contain mx-auto"
               onError={() => setImageError(true)}
             />
           ) : (
@@ -39,7 +39,7 @@ export default function VillagerCard({
             </div>
           )}
         </div>
-        <div className="p-2 sm:p-3 md:p-4">
+        <div className="px-3 pb-3 pt-2 flex-1 flex items-center justify-center">
           <h3 className="text-sm sm:text-base md:text-lg font-semibold text-zinc-900 text-center break-words line-clamp-1">
             {name}
           </h3>
