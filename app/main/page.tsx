@@ -1,11 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Header from "@/components/common/Header";
 import VillagerCard from "@/components/villagers/VillagerCard";
-import MailCard from "@/components/mail/MailCard";
+import MailCardForm from "@/components/mail/MailCardForm";
 import { getVillagers, type Villager as ApiVillager } from "@/lib/api/villagers";
 
 export default function MainPage() {
+  const router = useRouter();
   const [villagers, setVillagers] = useState<ApiVillager[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -63,23 +66,30 @@ export default function MainPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-6">
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-yellow-50 to-white">
+      <Header />
+      <div className="container mx-auto px-4 py-6">
       {isLoading && (
         <div className="col-span-full text-center py-12">
-          <p className="text-zinc-500">주민 목록을 불러오는 중...</p>
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-8 h-8 border-4 border-sky-200 border-t-sky-400 rounded-full animate-spin" />
+            <p className="text-zinc-600 font-medium">주민 목록을 불러오는 중...</p>
+          </div>
         </div>
       )}
 
       {error && (
         <div className="col-span-full text-center py-12">
-          <p className="text-red-500">{error}</p>
+          <div className="bg-red-100 border-2 border-red-300 text-red-700 px-6 py-4 rounded-lg inline-block">
+            <p className="font-medium">{error}</p>
+          </div>
         </div>
       )}
 
       {/* 백엔드 응답이 배열이 아닐 경우 fallback UI */}
       {!isLoading && !error && !isValidResponse && (
         <div className="col-span-full text-center py-12">
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 max-w-md mx-auto">
+          <div className="bg-yellow-100 border-2 border-yellow-300 rounded-xl p-6 max-w-md mx-auto shadow-md">
             <div className="text-4xl mb-4">⚠️</div>
             <h3 className="text-lg font-semibold text-yellow-800 mb-2">
               주민 데이터를 불러올 수 없습니다
@@ -95,7 +105,7 @@ export default function MainPage() {
 
       {/* 정상 응답이고 주민이 있는 경우 */}
       {!isLoading && !error && isValidResponse && villagers.length > 0 && (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           {villagers.map((villager) => (
             <div
               key={villager.id}
@@ -116,7 +126,9 @@ export default function MainPage() {
       {/* 정상 응답이지만 주민이 없는 경우 */}
       {!isLoading && !error && isValidResponse && villagers.length === 0 && (
         <div className="col-span-full text-center py-12">
-          <p className="text-zinc-500">아직 선택 가능한 주민이 없습니다.</p>
+          <div className="bg-white p-6 rounded-xl shadow-md border-2 border-sky-100 inline-block">
+            <p className="text-zinc-600 font-medium">아직 선택 가능한 주민이 없습니다.</p>
+          </div>
         </div>
       )}
 
@@ -153,19 +165,19 @@ export default function MainPage() {
               </svg>
             </button>
 
-            {/* MailCard 컴포넌트 */}
-            <MailCard
+            {/* MailCardForm 컴포넌트 */}
+            <MailCardForm
               villagerStickerUrl={selectedVillager.iconUrl || selectedVillager.imageUrl}
               villagerName={selectedVillager.name}
-              speechBubbleText={selectedVillager.catchphrase || ""}
               villagerId={selectedVillager.id}
-              originalText=""
+              villagerCatchphrase={selectedVillager.catchphrase || ""}
               onSendNow={handleSendNow}
               onScheduleSend={handleScheduleSend}
             />
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

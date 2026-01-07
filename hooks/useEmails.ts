@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { getEmails, type Email, type EmailStatus } from "@/lib/api/emails";
 
 export function useEmails(initialStatus?: EmailStatus) {
@@ -6,7 +6,7 @@ export function useEmails(initialStatus?: EmailStatus) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchEmails = async (status?: EmailStatus) => {
+  const fetchEmails = useCallback(async (status?: EmailStatus) => {
     setIsLoading(true);
     setError(null);
 
@@ -23,7 +23,7 @@ export function useEmails(initialStatus?: EmailStatus) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   return {
     emails,

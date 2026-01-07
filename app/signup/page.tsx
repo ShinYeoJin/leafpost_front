@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch, ApiClientError } from "@/lib/api/client";
 import { handleApiError } from "@/lib/api/handleApiError";
+import MusicToggleButton from "@/components/common/MusicToggleButton";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -182,6 +183,10 @@ export default function SignupPage() {
 
       <div className="w-full max-w-md relative z-10">
         <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-8 sm:p-10 border-4 border-yellow-100 relative">
+          {/* 음악 토글 버튼 (카드 우측 상단) */}
+          <div className="absolute top-2 right-2 z-10">
+            <MusicToggleButton variant="card" />
+          </div>
           {/* 메인으로 돌아가기 버튼 (카드 내부 왼쪽 상단) */}
           <button
             type="button"

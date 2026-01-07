@@ -114,6 +114,18 @@ export default function SignupPage() {
         if (response.data.refreshToken) {
           localStorage.setItem("refreshToken", response.data.refreshToken);
         }
+        // 사용자 정보 저장 (Mock 환경)
+        localStorage.setItem("userEmail", email);
+        localStorage.setItem("userNickname", nickname);
+        if (profileImage) {
+          // 프로필 이미지를 base64로 변환하여 저장 (Mock 환경)
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const base64String = reader.result as string;
+            localStorage.setItem("userProfileImage", base64String);
+          };
+          reader.readAsDataURL(profileImage);
+        }
         // 쿠키에 저장
         document.cookie = `accessToken=${response.data.accessToken}; path=/; SameSite=Strict`;
         if (response.data.refreshToken) {

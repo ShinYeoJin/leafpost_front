@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import AudioPlayer from "@/components/common/AudioPlayer";
 
 type LayoutProps = {
   children: React.ReactNode;
@@ -25,6 +26,11 @@ export default function MainLayout({ children }: LayoutProps) {
     }
   }, []);
 
-  return <>{children}</>;
+  return (
+    <>
+      <AudioPlayer src="/1-12 Noon (~Sunny Weather~).mp3" loop={true} volume={0.5} />
+      {children}
+    </>
+  );
 }
 

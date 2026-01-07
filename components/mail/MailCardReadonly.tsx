@@ -28,130 +28,111 @@ export default function MailCardReadonly({
 
   return (
     <div
-      className="relative w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg mx-auto
-                 rounded-2xl shadow-lg overflow-hidden 
+      className="relative w-full max-w-full sm:max-w-sm md:max-w-md lg:max-w-lg mx-auto
+                 rounded-xl sm:rounded-2xl shadow-lg overflow-hidden 
                  transition-all duration-300 ease-in-out
-                 hover:-translate-y-2 hover:shadow-2xl
-                 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800
-                 group"
+                 hover:-translate-y-1 sm:hover:-translate-y-2 hover:shadow-2xl
+                 bg-white border-2 border-sky-100
+                 group flex flex-col"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <Background backgroundUrl={backgroundUrl} hovered={hovered} />
-      <VillagerSticker 
-        villagerStickerUrl={villagerStickerUrl} 
-        villagerName={villagerName}
-        hovered={hovered}
-      />
-      <SpeechBubble text={speechBubbleText} hovered={hovered} />
-      {textSafeAreaContent && (
-        <TextSafeArea content={textSafeAreaContent} hovered={hovered} />
-      )}
-      <StatusBadge 
-        status={status} 
-        scheduledDate={scheduledDate} 
-        sentDate={sentDate}
-        hovered={hovered}
-      />
-    </div>
-  );
-}
-
-/* Background */
-type BackgroundProps = { 
-  backgroundUrl?: string;
-  hovered: boolean;
-};
-function Background({ backgroundUrl, hovered }: BackgroundProps) {
-  return (
-    <div className="relative w-full h-64 sm:h-72 md:h-80 lg:h-96 overflow-hidden rounded-t-2xl">
-      {backgroundUrl ? (
-        <Image 
-          src={backgroundUrl} 
-          alt="Background" 
-          fill 
-          className={`object-cover transition-all duration-500 ease-in-out
-                     ${hovered ? 'scale-110 opacity-90' : 'scale-100 opacity-100'}`}
+      {/* 카드 상단 헤더 영역 */}
+      <div className="relative bg-gradient-to-br from-white via-sky-50 to-sky-100 px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8">
+        {/* 주민 프로필 이미지와 이름 (좌측 또는 중앙) */}
+        <div className="flex justify-center sm:justify-start">
+          <VillagerHeaderImage 
+            villagerStickerUrl={villagerStickerUrl} 
+            villagerName={villagerName}
+            hovered={hovered}
+          />
+        </div>
+        
+        {/* 상태 배지 (우측 상단) */}
+        <StatusBadge 
+          status={status} 
+          scheduledDate={scheduledDate} 
+          sentDate={sentDate}
+          hovered={hovered}
         />
-      ) : (
-        <div className={`w-full h-full bg-gradient-to-br from-zinc-100 to-zinc-200 
-                        dark:from-zinc-800 dark:to-zinc-900
-                        transition-opacity duration-300
-                        ${hovered ? 'opacity-80' : 'opacity-100'}`} />
-      )}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent 
-                      dark:from-black/50 transition-opacity duration-300
-                      ${hovered ? 'opacity-100' : 'opacity-80'}" />
-    </div>
-  );
-}
+      </div>
 
-/* VillagerSticker */
-type VillagerStickerProps = { 
-  villagerStickerUrl: string; 
-  villagerName: string;
-  hovered: boolean;
-};
-function VillagerSticker({ villagerStickerUrl, villagerName, hovered }: VillagerStickerProps) {
-  return (
-    <div className={`absolute top-4 left-4 transition-all duration-300 ease-in-out
-                    ${hovered ? 'scale-110 translate-y-[-4px]' : 'scale-100'}`}>
-      <div className="relative drop-shadow-xl">
-        <Image
-          src={villagerStickerUrl}
-          alt={villagerName}
-          width={100}
-          height={100}
-          className="object-contain rounded-full transition-opacity duration-300
-                     border-2 border-white/50 dark:border-zinc-700/50
-                     ${hovered ? 'opacity-100' : 'opacity-90'}"
-        />
+      {/* 카드 하단 콘텐츠 영역 */}
+      <div className="flex flex-col gap-3 sm:gap-4 p-3 sm:p-4 md:p-5 bg-white">
+        {/* 제목 영역 */}
+        {textSafeAreaContent && (
+          <div className="relative">
+            <div className="mb-1.5 sm:mb-2">
+              <span className="text-xs font-semibold text-sky-600 uppercase tracking-wide">제목</span>
+            </div>
+            <div className="bg-sky-50 rounded-lg sm:rounded-xl p-2.5 sm:p-3 md:p-4 shadow-sm border-2 border-sky-200">
+              <p className="text-xs sm:text-sm md:text-base font-bold text-zinc-900 line-clamp-2 break-words">
+                {textSafeAreaContent}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* 내용 영역 */}
+        <div className="relative">
+          <div className="mb-1.5 sm:mb-2">
+            <span className="text-xs font-semibold text-sky-600 uppercase tracking-wide">내용</span>
+          </div>
+          <div className="bg-sky-50 rounded-lg sm:rounded-xl p-2.5 sm:p-3 md:p-4 shadow-sm border-2 border-sky-200">
+            <p className="text-xs sm:text-sm md:text-base text-zinc-900 leading-relaxed break-words">
+              {speechBubbleText}
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-/* SpeechBubble */
-type SpeechBubbleProps = { text: string; hovered: boolean };
-function SpeechBubble({ text, hovered }: SpeechBubbleProps) {
-  return (
-    <div
-      className={`absolute top-24 sm:top-28 md:top-32 left-4 right-4 
-                  bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm
-                  rounded-xl shadow-lg p-4 sm:p-5 
-                  border border-zinc-200 dark:border-zinc-700
-                  transition-all duration-300 ease-in-out
-                  ${hovered 
-                    ? 'opacity-100 scale-[1.02] shadow-xl border-zinc-300 dark:border-zinc-600' 
-                    : 'opacity-85 scale-100'}`}
-    >
-      <p className="text-sm sm:text-base text-zinc-900 dark:text-zinc-50 
-                    leading-relaxed font-medium">
-        {text}
-      </p>
-    </div>
-  );
-}
-
-/* TextSafeArea */
-type TextSafeAreaProps = { 
-  content: string;
+/* VillagerHeaderImage - 카드 상단 헤더에 배치되는 주민 프로필 이미지와 이름 */
+type VillagerHeaderImageProps = { 
+  villagerStickerUrl: string; 
+  villagerName: string;
   hovered: boolean;
 };
-function TextSafeArea({ content, hovered }: TextSafeAreaProps) {
+function VillagerHeaderImage({ villagerStickerUrl, villagerName, hovered }: VillagerHeaderImageProps) {
+  // villagerStickerUrl이 없거나 빈 문자열인 경우 placeholder 표시
+  if (!villagerStickerUrl || villagerStickerUrl.trim() === "") {
+    return (
+      <div className="flex flex-col items-center gap-2">
+        <div className={`relative transition-all duration-300 ease-in-out
+                        ${hovered ? 'scale-110' : 'scale-100'}`}>
+          <div className="relative drop-shadow-xl w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full bg-white flex items-center justify-center border-4 border-sky-200 shadow-lg">
+            <span className="text-3xl sm:text-4xl md:text-5xl">👤</span>
+          </div>
+        </div>
+        {/* 주민 이름 (항상 표시) */}
+        <p className="text-xs sm:text-sm text-sky-700 font-medium text-center max-w-[120px] sm:max-w-[140px] md:max-w-[160px] truncate">
+          {villagerName}
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className={`absolute bottom-20 sm:bottom-24 left-4 right-4 
-                    bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm
-                    rounded-xl p-4 sm:p-5 shadow-lg
-                    border border-zinc-200 dark:border-zinc-700
-                    transition-all duration-300 ease-in-out
-                    ${hovered 
-                      ? 'opacity-100 scale-[1.02] shadow-xl border-zinc-300 dark:border-zinc-600' 
-                      : 'opacity-90 scale-100'}`}>
-      <p className="text-sm sm:text-base font-semibold 
-                    text-zinc-900 dark:text-zinc-50 
-                    line-clamp-2">
-        {content}
+    <div className="flex flex-col items-center gap-2">
+      <div className={`relative transition-all duration-300 ease-in-out
+                      ${hovered ? 'scale-110' : 'scale-100'}`}>
+        <div className="relative drop-shadow-xl">
+          <Image
+            src={villagerStickerUrl}
+            alt={villagerName}
+            width={112}
+            height={112}
+            className="object-contain rounded-full transition-opacity duration-300
+                       border-4 border-white shadow-lg w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28
+                       ${hovered ? 'opacity-100' : 'opacity-90'}" 
+          />
+        </div>
+      </div>
+      {/* 주민 이름 (항상 표시) */}
+      <p className="text-xs sm:text-sm text-sky-700 font-medium text-center max-w-[120px] sm:max-w-[140px] md:max-w-[160px] truncate">
+        {villagerName}
       </p>
     </div>
   );
@@ -181,17 +162,17 @@ function StatusBadge({ status, scheduledDate, sentDate, hovered }: StatusBadgePr
       : "";
 
   return (
-    <div className={`absolute top-4 right-4 z-10
+    <div className={`absolute top-2 right-2 sm:top-4 sm:right-4 z-10
                     transition-all duration-300 ease-in-out
                     ${hovered ? 'scale-110' : 'scale-100'}`}>
       <div
-        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full 
-                   text-xs font-bold shadow-lg backdrop-blur-sm
+        className={`inline-flex items-center gap-1 sm:gap-1.5 px-2 py-1 sm:px-3 sm:py-1.5 rounded-full 
+                   text-[10px] sm:text-xs font-bold shadow-lg backdrop-blur-sm
                    transition-all duration-300
                    ${
                      isSent
-                       ? "bg-green-500/95 dark:bg-green-600/95 text-white border border-green-400/50 dark:border-green-500/50"
-                       : "bg-amber-500/95 dark:bg-amber-600/95 text-white border border-amber-400/50 dark:border-amber-500/50"
+                       ? "bg-green-400 text-white border-2 border-green-300"
+                       : "bg-yellow-400 text-white border-2 border-yellow-300"
                    }
                    ${hovered ? "shadow-xl opacity-100" : "opacity-95"}`}
       >

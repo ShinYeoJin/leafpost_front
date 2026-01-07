@@ -47,10 +47,33 @@ export async function signup(payload: SignupRequest): Promise<SignupResponse> {
 }
 
 /**
+ * 개발 환경용 Mock Login
+ * CORS 문제로 인한 로컬 개발 환경에서만 사용
+ */
+function mockLogin(email: string, password: string): Promise<LoginResponse> {
+  // 가짜 토큰 생성 (JWT 형식처럼 보이도록)
+  const mockAccessToken = `mock.access.token.${btoa(email).slice(0, 20)}.${Date.now()}`;
+  const mockRefreshToken = `mock.refresh.token.${btoa(email).slice(0, 20)}.${Date.now()}`;
+  
+  return Promise.resolve({
+    accessToken: mockAccessToken,
+    refreshToken: mockRefreshToken,
+  });
+}
+
+/**
  * 로그인
  * 백엔드 라우트: POST /api/auth/login
+ * 개발 환경에서는 Mock Login 사용 (CORS 문제 해결)
  */
 export async function login(email: string, password: string): Promise<LoginResponse> {
+  // 개발 환경에서만 Mock Login 사용
+  if (process.env.NODE_ENV === "development") {
+    console.log("[DEV] Mock Login 사용 중 - 실제 API 호출하지 않음");
+    return mockLogin(email, password);
+  }
+  
+  // Production 환경에서는 실제 API 호출
   const response = await apiFetch<LoginResponse>("/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),

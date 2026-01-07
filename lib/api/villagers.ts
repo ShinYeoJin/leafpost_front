@@ -42,7 +42,8 @@ function validateVillagersArray(arr: any[]): Villager[] {
 
 /**
  * 개발 환경용 Mock Villager 데이터
- * 백엔드 API가 더미 응답을 반환할 때 UI 테스트를 위해 사용
+ * CORS 문제로 인한 로컬 개발 환경에서 UI 테스트를 위해 사용
+ * catchphrase는 hover 시 말투 예시로 사용됨
  */
 const mockVillagers: Villager[] = [
   {
@@ -114,6 +115,16 @@ const mockVillagers: Villager[] = [
 ];
 
 export async function getVillagers(): Promise<GetVillagersResponse> {
+  // 개발 환경에서만 Mock 데이터 사용 (CORS 문제 해결)
+  if ((process.env.NODE_ENV as string) === "development") {
+    console.log("[DEV] Mock Villagers 사용 중 - 실제 API 호출하지 않음");
+    return {
+      villagers: mockVillagers,
+      isValid: true,
+    };
+  }
+
+  // Production 환경에서는 실제 API 호출
   const response = await apiFetch<unknown>("/villagers", {
     method: "GET",
   });
@@ -141,16 +152,7 @@ export async function getVillagers(): Promise<GetVillagersResponse> {
     }
     // data가 문자열이거나 다른 형태인 경우 (현재 더미 응답)
     // 예: { "success": true, "data": "This action returns all villagers" }
-    
-    // 개발 환경에서만 mock 데이터 사용
-    if (process.env.NODE_ENV === "development") {
-      return {
-        villagers: mockVillagers,
-        isValid: true,
-      };
-    }
-    
-    // Production 환경에서는 빈 배열 반환
+    // Production 환경에서는 빈 배열 반환 (개발 환경은 이미 위에서 처리됨)
     return {
       villagers: [],
       isValid: false,
@@ -158,15 +160,7 @@ export async function getVillagers(): Promise<GetVillagersResponse> {
   }
 
   // 케이스 3: 예상치 못한 형태
-  // 개발 환경에서만 mock 데이터 사용
-  if (process.env.NODE_ENV === "development") {
-    return {
-      villagers: mockVillagers,
-      isValid: true,
-    };
-  }
-  
-  // Production 환경에서는 빈 배열 반환
+  // Production 환경에서는 빈 배열 반환 (개발 환경은 이미 위에서 처리됨)
   return {
     villagers: [],
     isValid: false,

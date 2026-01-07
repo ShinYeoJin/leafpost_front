@@ -213,6 +213,19 @@ export default function MailCard({
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
 
+  const handleDelete = () => {
+    // Mock 환경에서도 삭제 동작 시뮬레이션
+    setSendSuccess("이메일이 삭제되었습니다.");
+    setIsModalOpen(false);
+    
+    // 부모 컴포넌트에 삭제 알림 (필요시)
+    // onDelete?.();
+    
+    setTimeout(() => {
+      setSendSuccess(null);
+    }, 3000);
+  };
+
   return (
     <div
       className="relative w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg mx-auto
@@ -366,7 +379,7 @@ export default function MailCard({
                 className="px-4 py-2 bg-red-500 dark:bg-red-600 text-white rounded-lg 
                            hover:bg-red-600 dark:hover:bg-red-700 
                            transition-all duration-200 font-medium shadow-md"
-                onClick={() => { /* 삭제 로직 연결 */ }}
+                onClick={handleDelete}
               >
                 삭제
               </button>

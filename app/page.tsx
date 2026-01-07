@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import MusicToggleButton from "@/components/common/MusicToggleButton";
 
 export default function EntryPage() {
   const router = useRouter();
@@ -13,7 +14,11 @@ export default function EntryPage() {
       <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-blue-200 rounded-full opacity-35 blur-lg"></div>
       
       <div className="w-full max-w-lg relative z-10">
-        <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-8 sm:p-12 border-4 border-green-100 text-center transform transition-all hover:scale-105">
+        <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-8 sm:p-12 border-4 border-green-100 text-center transform transition-all hover:scale-105 relative">
+          {/* 음악 토글 버튼 (카드 우측 상단) */}
+          <div className="absolute top-3 right-3">
+            <MusicToggleButton variant="card" />
+          </div>
           {/* 제목 영역 */}
           <div className="mb-6">
             <div className="text-5xl mb-2">💌</div>
@@ -24,13 +29,14 @@ export default function EntryPage() {
           </div>
           
           {/* 설명 텍스트 */}
-          <p className="text-lg sm:text-xl text-green-600 mb-10 leading-relaxed font-medium">
-            <span className="text-2xl">🍃</span> LeafPost에 오신 것을 환영합니다! <span className="text-2xl">🍃</span>
-            <br />
-            <span className="text-base text-green-500 mt-2 block">
+          <div className="text-lg sm:text-xl text-green-600 mb-10 leading-relaxed font-medium">
+            <p className="animate-continuous-fade-in-up">
+              <span className="text-2xl">🍃</span> LeafPost에 오신 것을 환영합니다! <span className="text-2xl">🍃</span>
+            </p>
+            <p className="text-base text-green-500 mt-2 block animate-continuous-fade-in-up" style={{ animationDelay: '0.3s' }}>
               친구나 주변사람들에게 내 마음을 전해보세요!
-            </span>
-          </p>
+            </p>
+          </div>
           
           {/* 버튼 영역 */}
           <div className="flex flex-col sm:flex-row gap-4">
