@@ -167,11 +167,9 @@ export default function MailCardForm({
       }
     }
     
-    // subject 검증 (백엔드에서 필수)
+    // subject 검증 (백엔드에서 optional이므로 길이만 검증)
     const trimmedSubject = subject.trim();
-    if (!trimmedSubject) {
-      newFieldErrors.subject = "제목을 입력해주세요.";
-    } else if (trimmedSubject.length > 255) {
+    if (trimmedSubject && trimmedSubject.length > 255) {
       newFieldErrors.subject = "제목은 255자 이하여야 합니다.";
     }
 
@@ -211,7 +209,7 @@ export default function MailCardForm({
         originalText: content.trim(),
         toneType: villagerToneType.trim(), // villagerToneType 사용 (백엔드에서 받은 값)
         scheduledAt: now.toISOString(), // 즉시 전송 시 현재 시간
-        subject: subject.trim() || "제목 없음", // subject 필수 (비어있으면 기본값)
+        subject: subject.trim() || "", // subject optional (비어있으면 빈 문자열)
       };
       
       console.log(`[MailCardForm] sendEmail (즉시 전송) - villagerToneType 값:`, villagerToneType);
@@ -272,11 +270,9 @@ export default function MailCardForm({
       }
     }
     
-    // subject 검증 (백엔드에서 필수)
+    // subject 검증 (백엔드에서 optional이므로 길이만 검증)
     const trimmedSubject = subject.trim();
-    if (!trimmedSubject) {
-      newFieldErrors.subject = "제목을 입력해주세요.";
-    } else if (trimmedSubject.length > 255) {
+    if (trimmedSubject && trimmedSubject.length > 255) {
       newFieldErrors.subject = "제목은 255자 이하여야 합니다.";
     }
 
@@ -317,7 +313,7 @@ export default function MailCardForm({
         originalText: content.trim(),
         toneType: villagerToneType.trim(), // villagerToneType 사용 (백엔드에서 받은 값)
         scheduledAt: scheduledAt.toISOString(),
-        subject: subject.trim() || "제목 없음", // subject 필수 (비어있으면 기본값)
+        subject: subject.trim() || "", // subject optional (비어있으면 빈 문자열)
       };
       
       console.log(`[MailCardForm] sendEmail (예약 전송) - villagerToneType 값:`, villagerToneType);
@@ -459,7 +455,7 @@ export default function MailCardForm({
         {/* 제목 (필수) */}
         <div>
           <label className="block text-sm font-medium text-zinc-700 mb-2">
-            제목 <span className="text-red-500 text-xs">(필수)</span>
+            제목 <span className="text-zinc-400 text-xs">(선택사항)</span>
           </label>
           <input
             type="text"
@@ -483,9 +479,8 @@ export default function MailCardForm({
                          ? "border-red-400 focus:ring-red-400 focus:border-red-400"
                          : "border-sky-200 focus:ring-sky-400 focus:border-sky-400"
                      }`}
-            placeholder="이메일 제목 (필수)"
+            placeholder="이메일 제목 (선택사항)"
             disabled={isSending}
-            required
             maxLength={255}
           />
           {fieldErrors.subject && (

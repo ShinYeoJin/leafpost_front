@@ -117,11 +117,12 @@ function VillagerHeaderImage({ villagerStickerUrl, villagerName, hovered }: Vill
     <div className="flex flex-col items-center gap-2">
       <div className={`relative transition-all duration-300 ease-in-out
                       ${hovered ? 'scale-110' : 'scale-100'}`}>
-        <div className="relative drop-shadow-xl w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full overflow-hidden border-4 border-white shadow-lg">
+        <div className="relative drop-shadow-xl w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full overflow-hidden border-4 border-white shadow-lg bg-white">
           <img
             src={villagerStickerUrl}
             alt={villagerName}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
+            style={{ objectPosition: 'center' }}
           />
         </div>
       </div>

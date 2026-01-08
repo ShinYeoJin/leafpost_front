@@ -217,24 +217,23 @@ export async function sendEmail(payload: SendEmailRequest): Promise<SendEmailRes
     throw error;
   }
   
-  // subject 검증 (백엔드에서 필수)
-  if (!payload.subject || typeof payload.subject !== "string") {
-    const error = new Error("subject가 필수입니다.");
-    console.error("[Emails] sendEmail - subject 누락:", payload);
+  // subject 검증 (백엔드에서 optional이므로 타입과 길이만 검증)
+  if (payload.subject !== undefined && typeof payload.subject !== "string") {
+    const error = new Error("subject는 string 타입이어야 합니다.");
+    console.error("[Emails] sendEmail - subject 타입 오류:", payload);
     throw error;
   }
   
-  const trimmedSubject = payload.subject.trim();
+  const trimmedSubject = payload.subject ? payload.subject.trim() : "";
   
-  // subject가 비어있으면 기본값 사용
-  const finalSubject = trimmedSubject || "제목 없음";
-  
-  // subject 길이 검증 (255자 이하)
-  if (finalSubject.length > 255) {
+  // subject 길이 검증 (255자 이하, 비어있어도 OK)
+  if (trimmedSubject.length > 255) {
     const error = new Error("subject는 255자 이하여야 합니다.");
-    console.error("[Emails] sendEmail - subject 길이 초과:", finalSubject.length);
+    console.error("[Emails] sendEmail - subject 길이 초과:", trimmedSubject.length);
     throw error;
   }
+  
+  const finalSubject = trimmedSubject; // 빈 문자열도 허용
   
   // toneType 검증
   if (!payload.toneType || typeof payload.toneType !== "string" || !payload.toneType.trim()) {

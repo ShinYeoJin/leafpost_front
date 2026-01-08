@@ -155,8 +155,20 @@ export default function MyPage() {
       }
     }
     
-    // 유저가 작성한 원본 내용을 표시 (previewContent가 아닌 content 사용)
+    // 유저가 작성한 원본 내용을 표시
+    // 백엔드에서 content 필드에 originalText가 들어오는지 확인 필요
+    // 일단 content를 우선 사용하고, 없으면 previewContent 사용
     const speechBubbleText = email.content || email.previewContent || "";
+    
+    // 디버깅: 이메일 데이터 확인
+    if (!speechBubbleText) {
+      console.warn("[MyPage] 이메일 내용이 비어있음:", {
+        id: email.id,
+        content: email.content,
+        previewContent: email.previewContent,
+        subject: email.subject,
+      });
+    }
 
     // 주민 이미지 찾기
     const villager = villagers.find((v) => v.id === email.villagerId);

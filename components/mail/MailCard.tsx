@@ -151,7 +151,7 @@ export default function MailCard({
         originalText: content,
         toneType,
         scheduledAt: now.toISOString(),
-        subject: textSafeAreaContent?.trim() || "제목 없음", // subject 필수 (textSafeAreaContent 사용 또는 기본값)
+        subject: textSafeAreaContent?.trim() || "", // subject optional (textSafeAreaContent 사용 또는 빈 문자열)
       };
       
       console.log(`[MailCard] sendEmail (즉시 전송) - payload:`, JSON.stringify(payload, null, 2));
@@ -244,7 +244,7 @@ export default function MailCard({
         originalText: content,
         toneType,
         scheduledAt: scheduledAt.toISOString(),
-        subject: textSafeAreaContent?.trim() || "제목 없음", // subject 필수 (textSafeAreaContent 사용 또는 기본값)
+        subject: textSafeAreaContent?.trim() || "", // subject optional (textSafeAreaContent 사용 또는 빈 문자열)
       };
       
       console.log(`[MailCard] sendEmail (예약 전송) - payload:`, JSON.stringify(payload, null, 2));
@@ -547,14 +547,17 @@ function VillagerSticker({
             <span className="text-xs text-zinc-500 dark:text-zinc-400">이미지 없음</span>
           </div>
         ) : (
-          <img
-            src={villagerStickerUrl}
-            alt={villagerName}
-            className="object-contain transition-transform duration-300
-                       w-[120px] h-[120px] sm:w-[140px] sm:h-[140px] md:w-[160px] md:h-[160px]"
-            onLoad={handleImageLoad}
-            onError={handleImageError}
-          />
+          <div className="w-[120px] h-[120px] sm:w-[140px] sm:h-[140px] md:w-[160px] md:h-[160px]
+                         rounded-full overflow-hidden bg-white border-4 border-white shadow-lg">
+            <img
+              src={villagerStickerUrl}
+              alt={villagerName}
+              className="w-full h-full object-contain transition-transform duration-300"
+              style={{ objectPosition: 'center' }}
+              onLoad={handleImageLoad}
+              onError={handleImageError}
+            />
+          </div>
         )}
       </div>
     </div>
