@@ -19,18 +19,9 @@ export default function LoginPage() {
 
     try {
       const response = await login(email, password);
-      // localStorage에 저장
-      localStorage.setItem("accessToken", response.accessToken);
-      if (response.refreshToken) {
-        localStorage.setItem("refreshToken", response.refreshToken);
-      }
-      // 사용자 정보 저장 (Mock 환경)
+      // 백엔드에서 httpOnly 쿠키로 토큰을 설정하므로 클라이언트에서 저장할 필요 없음
+      // 사용자 이메일만 localStorage에 저장 (UI 표시용)
       localStorage.setItem("userEmail", email);
-      // 쿠키에 저장
-      document.cookie = `accessToken=${response.accessToken}; path=/; SameSite=Strict`;
-      if (response.refreshToken) {
-        document.cookie = `refreshToken=${response.refreshToken}; path=/; SameSite=Strict`;
-      }
       router.push("/main");
     } catch (err) {
       const errorMessage =

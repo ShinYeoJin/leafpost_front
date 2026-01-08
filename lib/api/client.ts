@@ -1,5 +1,4 @@
 export type RequestConfig = RequestInit & {
-  accessToken?: string | null;
   onUnauthorized?: () => void | Promise<void>;
 };
 
@@ -38,7 +37,7 @@ export async function apiFetch<T = unknown>(
   path: string,
   config: RequestConfig = {}
 ): Promise<ApiResponse<T>> {
-  const { accessToken, onUnauthorized, headers, ...fetchConfig } = config;
+  const { onUnauthorized, headers, ...fetchConfig } = config;
 
   const isFormData = fetchConfig.body instanceof FormData;
 
@@ -51,16 +50,13 @@ export async function apiFetch<T = unknown>(
     requestHeaders["Content-Type"] = "application/json";
   }
 
-  if (accessToken) {
-    requestHeaders["Authorization"] = `Bearer ${accessToken}`;
-  }
-
   try {
     const response = await fetch(
       path.startsWith("http") ? path : `${BASE_URL}${path}`,
       {
         ...fetchConfig,
         headers: requestHeaders,
+        credentials: "include", // 쿠키 기반 인증을 위해 쿠키 포함
       }
     );
 

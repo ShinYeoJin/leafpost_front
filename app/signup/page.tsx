@@ -69,19 +69,19 @@ export default function SignupPage() {
           body: formData,
         });
 
-        if (response.data?.accessToken) {
-          localStorage.setItem("accessToken", response.data.accessToken);
-          if (response.data.refreshToken) {
-            localStorage.setItem("refreshToken", response.data.refreshToken);
-          }
-          document.cookie = `accessToken=${response.data.accessToken}; path=/; SameSite=Strict`;
-          if (response.data.refreshToken) {
-            document.cookie = `refreshToken=${response.data.refreshToken}; path=/; SameSite=Strict`;
-          }
-          router.push("/main");
-        } else {
-          router.push("/login");
+        // 백엔드에서 httpOnly 쿠키로 토큰을 설정하므로 클라이언트에서 저장할 필요 없음
+        // 사용자 정보만 localStorage에 저장 (UI 표시용)
+        localStorage.setItem("userEmail", email);
+        localStorage.setItem("userNickname", nickname);
+        if (profileImage) {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const base64String = reader.result as string;
+            localStorage.setItem("userProfileImage", base64String);
+          };
+          reader.readAsDataURL(profileImage);
         }
+        router.push("/main");
       } catch (retryErr) {
         // 재시도 실패는 기존 에러 처리 로직과 동일하게 처리
         if (retryErr instanceof ApiClientError) {
@@ -108,24 +108,20 @@ export default function SignupPage() {
           body: formData,
         });
 
-      // 회원가입 성공 시 accessToken 저장
-      if (response.data?.accessToken) {
-        // localStorage에 저장
-        localStorage.setItem("accessToken", response.data.accessToken);
-        if (response.data.refreshToken) {
-          localStorage.setItem("refreshToken", response.data.refreshToken);
-        }
-        // 쿠키에 저장
-        document.cookie = `accessToken=${response.data.accessToken}; path=/; SameSite=Strict`;
-        if (response.data.refreshToken) {
-          document.cookie = `refreshToken=${response.data.refreshToken}; path=/; SameSite=Strict`;
-        }
-        // /main 페이지로 자동 redirect
-        router.push("/main");
-      } else {
-        // 토큰이 없으면 로그인 페이지로 이동
-        router.push("/login");
+      // 백엔드에서 httpOnly 쿠키로 토큰을 설정하므로 클라이언트에서 저장할 필요 없음
+      // 사용자 정보만 localStorage에 저장 (UI 표시용)
+      localStorage.setItem("userEmail", email);
+      localStorage.setItem("userNickname", nickname);
+      if (profileImage) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64String = reader.result as string;
+          localStorage.setItem("userProfileImage", base64String);
+        };
+        reader.readAsDataURL(profileImage);
       }
+      // /main 페이지로 자동 redirect
+      router.push("/main");
     } catch (err) {
       if (err instanceof ApiClientError) {
         const errorInfo = handleApiError(err, retryAction);

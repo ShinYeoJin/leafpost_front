@@ -34,14 +34,21 @@ export default function Header() {
     router.push("/main/mypage");
   };
 
-  const handleLogout = () => {
-    // localStorage와 쿠키에서 토큰 제거
+  const handleLogout = async () => {
+    // 로그아웃 API 호출 (백엔드에서 httpOnly 쿠키 삭제)
+    try {
+      const { logout } = await import("@/lib/api/auth");
+      await logout();
+    } catch (err) {
+      console.error("로그아웃 API 호출 실패:", err);
+      // API 호출 실패해도 로컬 상태는 정리
+    }
+    
+    // 로컬 상태 정리 (UI 표시용 데이터만)
     if (typeof window !== "undefined") {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
       localStorage.removeItem("userEmail");
-      document.cookie = "accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-      document.cookie = "refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      localStorage.removeItem("userNickname");
+      localStorage.removeItem("userProfileImage");
     }
     router.push("/");
   };
