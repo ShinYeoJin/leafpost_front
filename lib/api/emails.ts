@@ -169,6 +169,16 @@ function mockSendEmail(payload: SendEmailRequest): Promise<SendEmailResponse> {
 
 // POST
 export async function sendEmail(payload: SendEmailRequest): Promise<SendEmailResponse> {
+  // 디버깅: 전송 payload 확인
+  console.log("[Emails] sendEmail - payload:", JSON.stringify(payload, null, 2));
+  
+  // toneType 검증
+  if (!payload.toneType || !payload.toneType.trim()) {
+    const error = new Error("toneType이 필수입니다. villager 데이터를 확인해주세요.");
+    console.error("[Emails] sendEmail - toneType 누락:", payload);
+    throw error;
+  }
+  
   // 개발 환경에서만 Mock Send Email 사용
   if ((process.env.NODE_ENV as string) === "development") {
     console.log("[DEV] Mock Send Email 사용 중 - 실제 API 호출하지 않음");
@@ -176,10 +186,12 @@ export async function sendEmail(payload: SendEmailRequest): Promise<SendEmailRes
   }
   
   // Production 환경에서는 실제 API 호출
+  console.log(`[Emails] sendEmail - 실제 API 호출: POST /emails`);
   const response = await apiFetch<SendEmailResponse>("/emails", {
     method: "POST",
     body: JSON.stringify(payload),
   });
+  console.log("[Emails] sendEmail - 응답:", response.data);
   return response.data;
 }
 
@@ -188,6 +200,21 @@ export async function previewEmail(
   originalText: string,
   toneType: string
 ): Promise<{ previewContent: string }> {
+  // toneType 검증
+  if (!toneType || !toneType.trim()) {
+    const error = new Error("toneType이 필수입니다. villager 데이터를 확인해주세요.");
+    console.error("[Emails] previewEmail - toneType 누락:", { villagerId, originalText, toneType });
+    throw error;
+  }
+  
+  const payload = {
+    villagerId,
+    originalText,
+    toneType,
+  };
+  
+  console.log("[Emails] previewEmail - payload:", JSON.stringify(payload, null, 2));
+  
   // 개발 환경에서만 Mock Preview Email 사용
   if ((process.env.NODE_ENV as string) === "development") {
     console.log("[DEV] Mock Preview Email 사용 중 - 실제 API 호출하지 않음");
@@ -195,14 +222,12 @@ export async function previewEmail(
   }
 
   // Production 환경에서는 실제 API 호출
+  console.log(`[Emails] previewEmail - 실제 API 호출: POST /emails/preview`);
   const response = await apiFetch<{ previewContent: string }>("/emails/preview", {
     method: "POST",
-    body: JSON.stringify({
-      villagerId,
-      originalText,
-      toneType,
-    }),
+    body: JSON.stringify(payload),
   });
+  console.log("[Emails] previewEmail - 응답:", response.data);
   return response.data;
 }
 
@@ -250,6 +275,21 @@ export async function previewEmailCard(
   originalText: string,
   toneType: string
 ): Promise<PreviewEmailCardResponse> {
+  // toneType 검증
+  if (!toneType || !toneType.trim()) {
+    const error = new Error("toneType이 필수입니다. villager 데이터를 확인해주세요.");
+    console.error("[Emails] previewEmailCard - toneType 누락:", { villagerId, originalText, toneType });
+    throw error;
+  }
+  
+  const payload = {
+    villagerId,
+    originalText,
+    toneType,
+  };
+  
+  console.log("[Emails] previewEmailCard - payload:", JSON.stringify(payload, null, 2));
+  
   // 개발 환경에서만 Mock Preview Email Card 사용
   if ((process.env.NODE_ENV as string) === "development") {
     console.log("[DEV] Mock Preview Email Card 사용 중 - 실제 API 호출하지 않음");
@@ -257,13 +297,11 @@ export async function previewEmailCard(
   }
 
   // Production 환경에서는 실제 API 호출
+  console.log(`[Emails] previewEmailCard - 실제 API 호출: POST /emails/preview`);
   const response = await apiFetch<PreviewEmailCardResponse>("/emails/preview", {
     method: "POST",
-    body: JSON.stringify({
-      villagerId,
-      originalText,
-      toneType,
-    }),
+    body: JSON.stringify(payload),
   });
+  console.log("[Emails] previewEmailCard - 응답:", response.data);
   return response.data;
 }

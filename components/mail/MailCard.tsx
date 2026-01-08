@@ -59,18 +59,25 @@ export default function MailCard({
     debounceTimerRef.current = setTimeout(async () => {
       try {
         // toneType이 있는 경우에만 미리보기 API 호출
-        if (!toneType) {
+        if (!toneType || !toneType.trim()) {
+          console.error(
+            `[MailCard] previewEmail - toneType 누락 (villagerId: ${villagerId}, toneType: ${toneType})`
+          );
           setPreviewText("");
           setPreviewError("말투 정보를 찾을 수 없습니다.");
           setIsLoading(false);
           return;
         }
 
+        console.log(
+          `[MailCard] previewEmail 호출 - villagerId: ${villagerId}, toneType: ${toneType}, originalText: ${originalText.substring(0, 50)}...`
+        );
         const response = await previewEmail(villagerId, originalText, toneType);
         setPreviewText(response.previewContent);
         setPreviewError(null);
       } catch (err) {
         const error = err instanceof Error ? err : new Error("Preview failed");
+        console.error(`[MailCard] previewEmail 실패:`, error);
         setPreviewError(error.message);
         setPreviewText("");
       } finally {
@@ -83,7 +90,7 @@ export default function MailCard({
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [originalText, villagerId]);
+  }, [originalText, villagerId, toneType]);
 
   // imageUrl 변경 시 로딩 상태 리셋
   useEffect(() => {
@@ -108,11 +115,15 @@ export default function MailCard({
     setSendError(null);
 
     try {
-      if (!toneType) {
+      if (!toneType || !toneType.trim()) {
+        console.error(
+          `[MailCard] handleSendNow - toneType 누락 (villagerId: ${villagerId}, toneType: ${toneType})`
+        );
         setSendError("말투 정보를 찾을 수 없습니다. 다시 시도해주세요.");
         setTimeout(() => {
           setSendError(null);
         }, 5000);
+        setIsSending(false);
         return;
       }
 
@@ -129,18 +140,23 @@ export default function MailCard({
         setTimeout(() => {
           setSendError(null);
         }, 5000);
+        setIsSending(false);
         return;
       }
       
       const now = new Date();
-      // POST /emails 호출
-      const response = await sendEmail({
+      const payload = {
         villagerId,
         receiverEmail,
         originalText: content,
         toneType,
         scheduledAt: now.toISOString(),
-      });
+      };
+      
+      console.log(`[MailCard] sendEmail (즉시 전송) - payload:`, JSON.stringify(payload, null, 2));
+      
+      // POST /emails 호출
+      const response = await sendEmail(payload);
 
       // 서버에서 반환한 imageUrl 처리
       if (response.imageUrl) {
@@ -189,11 +205,15 @@ export default function MailCard({
     setSendError(null);
 
     try {
-      if (!toneType) {
+      if (!toneType || !toneType.trim()) {
+        console.error(
+          `[MailCard] handleScheduleSend - toneType 누락 (villagerId: ${villagerId}, toneType: ${toneType})`
+        );
         setSendError("말투 정보를 찾을 수 없습니다. 다시 시도해주세요.");
         setTimeout(() => {
           setSendError(null);
         }, 5000);
+        setIsSending(false);
         return;
       }
 
@@ -210,20 +230,25 @@ export default function MailCard({
         setTimeout(() => {
           setSendError(null);
         }, 5000);
+        setIsSending(false);
         return;
       }
 
       const scheduledAt = new Date();
       scheduledAt.setHours(scheduledAt.getHours() + 1);
 
-      // POST /emails 호출 (예약 전송)
-      const response = await sendEmail({
+      const payload = {
         villagerId,
         receiverEmail,
         originalText: content,
         toneType,
         scheduledAt: scheduledAt.toISOString(),
-      });
+      };
+      
+      console.log(`[MailCard] sendEmail (예약 전송) - payload:`, JSON.stringify(payload, null, 2));
+
+      // POST /emails 호출 (예약 전송)
+      const response = await sendEmail(payload);
 
       // 서버에서 반환한 imageUrl 처리
       if (response.imageUrl) {

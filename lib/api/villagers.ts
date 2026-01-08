@@ -30,19 +30,53 @@ export type GetVillagersResponse = {
  * 백엔드 응답을 프론트에서 사용하는 Villager 타입으로 변환
  */
 function normalizeVillager(item: any): Villager | null {
+  // 디버깅: 실제 응답 구조 확인
+  console.log("[Villagers] normalizeVillager - 원본 응답:", JSON.stringify(item, null, 2));
+
   const api = item as VillagerApi;
 
   if (!api || typeof api.id !== "number" || typeof api.name !== "string") {
+    console.warn("[Villagers] normalizeVillager - 필수 필드 누락:", { id: api?.id, name: api?.name });
     return null;
   }
 
   const imageUrl = api.imageUrl;
-  if (!imageUrl || typeof imageUrl !== "string") return null;
+  if (!imageUrl || typeof imageUrl !== "string") {
+    console.warn("[Villagers] normalizeVillager - imageUrl 누락:", api);
+    return null;
+  }
 
   const toneExample = api.previewText ?? "";
-  const toneType = typeof api.toneType === "string" ? api.toneType : "RULE";
+  
+  // toneType 추출: 다양한 응답 구조 대응
+  let toneType: string | undefined;
+  
+  // 케이스 1: 직접 필드 (api.toneType)
+  if (typeof api.toneType === "string" && api.toneType.trim()) {
+    toneType = api.toneType;
+  }
+  // 케이스 2: tones 배열의 첫 번째 항목 (api.tones[0].toneType)
+  else if (Array.isArray((item as any).tones) && (item as any).tones.length > 0) {
+    const firstTone = (item as any).tones[0];
+    if (typeof firstTone?.toneType === "string" && firstTone.toneType.trim()) {
+      toneType = firstTone.toneType;
+    }
+  }
+  // 케이스 3: tone 객체 (api.tone.toneType)
+  else if ((item as any).tone && typeof (item as any).tone.toneType === "string") {
+    toneType = (item as any).tone.toneType;
+  }
 
-  return {
+  // toneType이 없으면 경고 및 기본값 사용 (개발 환경에서만)
+  if (!toneType) {
+    console.warn(
+      `[Villagers] normalizeVillager - toneType을 찾을 수 없음 (villagerId: ${api.id}). ` +
+      `응답 구조: ${JSON.stringify(item, null, 2)}. 기본값 "RULE" 사용.`
+    );
+    toneType = "RULE"; // 개발 환경 기본값
+  }
+
+  const normalized = {
     id: api.id,
     name: api.name,
     imageUrl,
@@ -51,6 +85,10 @@ function normalizeVillager(item: any): Villager | null {
     toneExample,
     toneType,
   };
+
+  console.log(`[Villagers] normalizeVillager - 정규화 완료 (villagerId: ${api.id}, toneType: ${toneType}):`, normalized);
+  
+  return normalized;
 }
 
 /**
@@ -125,6 +163,9 @@ export async function getVillagers(): Promise<GetVillagersResponse> {
     });
 
     const raw = response.data as any;
+    
+    // 디버깅: 전체 응답 구조 확인
+    console.log("[Villagers] getVillagers - 전체 응답:", JSON.stringify(raw, null, 2));
 
     // 케이스 1: 응답이 직접 배열인 경우
     if (Array.isArray(raw)) {
@@ -175,12 +216,18 @@ export async function getVillagerById(id: number): Promise<Villager> {
   });
 
   const raw = response.data as any;
+  
+  // 디버깅: 단일 villager 응답 구조 확인
+  console.log(`[Villagers] getVillagerById(${id}) - 전체 응답:`, JSON.stringify(raw, null, 2));
 
   // 단일 객체 또는 { data: { ... } } 형태 모두 대응
   if (raw && !Array.isArray(raw) && typeof raw === "object") {
     const data = raw.data && typeof raw.data === "object" ? raw.data : raw;
     const villager = normalizeVillager(data);
-    if (villager) return villager;
+    if (villager) {
+      console.log(`[Villagers] getVillagerById(${id}) - 정규화 완료, toneType: ${villager.toneType}`);
+      return villager;
+    }
   }
 
   throw new Error("잘못된 주민 상세 응답 형식입니다.");

@@ -70,10 +70,23 @@ export default function MailCardForm({
       return;
     }
 
+    // toneType 검증
+    if (!villagerToneType || !villagerToneType.trim()) {
+      console.error(
+        `[MailCardForm] previewEmailCard - toneType 누락 (villagerId: ${villagerId}, villagerToneType: ${villagerToneType})`
+      );
+      setPreviewError("말투 정보를 찾을 수 없습니다. 페이지를 새로고침해주세요.");
+      setIsPreviewLoading(false);
+      return;
+    }
+
     setIsPreviewLoading(true);
     setPreviewError(null);
     debounceTimerRef.current = setTimeout(async () => {
       try {
+        console.log(
+          `[MailCardForm] previewEmailCard 호출 - villagerId: ${villagerId}, toneType: ${villagerToneType}, originalText: ${content.trim().substring(0, 50)}...`
+        );
         const response = await previewEmailCard(
           villagerId,
           content.trim(),
@@ -84,6 +97,7 @@ export default function MailCardForm({
         setPreviewError(null);
       } catch (err) {
         const error = err instanceof Error ? err : new Error("Preview failed");
+        console.error(`[MailCardForm] previewEmailCard 실패:`, error);
         setPreviewError(error.message);
         setPreviewImageUrl("");
         setPreviewText("");
@@ -97,7 +111,7 @@ export default function MailCardForm({
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [content, villagerId]);
+  }, [content, villagerId, villagerToneType]);
 
   const handleSendNow = async () => {
     // 필드별 에러 초기화
@@ -134,15 +148,27 @@ export default function MailCardForm({
     setSendError(null);
 
     try {
+      // toneType 검증
+      if (!villagerToneType || !villagerToneType.trim()) {
+        setSendError("말투 정보를 찾을 수 없습니다. 페이지를 새로고침해주세요.");
+        setTimeout(() => setSendError(null), 5000);
+        setIsSending(false);
+        return;
+      }
+
       // 유저가 입력한 내용을 주민 말투로 변환하여 전송
       const now = new Date();
-      await sendEmail({
+      const payload = {
         villagerId,
         receiverEmail: toEmail.trim(),
         originalText: content.trim(),
-        toneType: "RULE",
+        toneType: villagerToneType,
         scheduledAt: now.toISOString(), // 즉시 전송 시 현재 시간
-      });
+      };
+      
+      console.log(`[MailCardForm] sendEmail (즉시 전송) - payload:`, JSON.stringify(payload, null, 2));
+      
+      await sendEmail(payload);
 
       setSendSuccess("이메일이 성공적으로 전송되었습니다.");
       onSendNow?.();
@@ -207,16 +233,28 @@ export default function MailCardForm({
     setSendError(null);
 
     try {
+      // toneType 검증
+      if (!villagerToneType || !villagerToneType.trim()) {
+        setSendError("말투 정보를 찾을 수 없습니다. 페이지를 새로고침해주세요.");
+        setTimeout(() => setSendError(null), 5000);
+        setIsSending(false);
+        return;
+      }
+
       const scheduledAt = new Date(scheduledDateTime);
       
       // 유저가 입력한 내용을 주민 말투로 변환하여 예약 전송
-      await sendEmail({
+      const payload = {
         villagerId,
         receiverEmail: toEmail.trim(),
         originalText: content.trim(),
-        toneType: "RULE",
+        toneType: villagerToneType,
         scheduledAt: scheduledAt.toISOString(),
-      });
+      };
+      
+      console.log(`[MailCardForm] sendEmail (예약 전송) - payload:`, JSON.stringify(payload, null, 2));
+      
+      await sendEmail(payload);
 
       setSendSuccess(`이메일이 ${scheduledAt.toLocaleString()}에 전송 예약되었습니다.`);
       onScheduleSend?.(scheduledAt);

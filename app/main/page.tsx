@@ -67,6 +67,21 @@ export default function MainPage() {
   }, []);
 
   const handleVillagerClick = (villager: ApiVillager) => {
+    // 디버깅: 선택된 villager의 toneType 확인
+    console.log(`[MainPage] handleVillagerClick - 선택된 villager:`, {
+      id: villager.id,
+      name: villager.name,
+      toneType: villager.toneType,
+      전체데이터: villager,
+    });
+    
+    if (!villager.toneType || !villager.toneType.trim()) {
+      console.error(
+        `[MainPage] handleVillagerClick - toneType 누락! villagerId: ${villager.id}, villager:`,
+        villager
+      );
+    }
+    
     setSelectedVillager(villager);
     setIsModalOpen(true);
   };
@@ -187,15 +202,26 @@ export default function MainPage() {
             </button>
 
             {/* MailCardForm 컴포넌트 */}
-            <MailCardForm
-              villagerStickerUrl={selectedVillager.imageUrl}
-              villagerName={selectedVillager.name}
-              villagerId={selectedVillager.id}
-              villagerCatchphrase={selectedVillager.toneExample}
-              villagerToneType={selectedVillager.toneType}
-              onSendNow={handleSendNow}
-              onScheduleSend={handleScheduleSend}
-            />
+            {selectedVillager.toneType ? (
+              <MailCardForm
+                villagerStickerUrl={selectedVillager.imageUrl}
+                villagerName={selectedVillager.name}
+                villagerId={selectedVillager.id}
+                villagerCatchphrase={selectedVillager.toneExample}
+                villagerToneType={selectedVillager.toneType}
+                onSendNow={handleSendNow}
+                onScheduleSend={handleScheduleSend}
+              />
+            ) : (
+              <div className="bg-red-50 border-2 border-red-300 rounded-xl p-6 text-center">
+                <p className="text-red-700 font-medium">
+                  말투 정보를 불러올 수 없습니다. 페이지를 새로고침해주세요.
+                </p>
+                <p className="text-sm text-red-600 mt-2">
+                  (villagerId: {selectedVillager.id}, toneType: {selectedVillager.toneType || "undefined"})
+                </p>
+              </div>
+            )}
           </div>
         </div>
       )}
