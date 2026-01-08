@@ -47,19 +47,33 @@ function mockGetEmails(status?: EmailStatus): Promise<Email[]> {
         let updated = false;
         
         // 예약 시간이 지난 이메일을 자동으로 'sent' 상태로 업데이트
+        // 하위 호환성: 기존 localStorage 데이터에 originalText/transformedText가 없을 수 있음
         const updatedEmails = emails.map((email) => {
+          // originalText와 transformedText 필드 보완 (하위 호환성)
+          const originalText = email.originalText || email.content || "";
+          const transformedText = email.transformedText || email.previewContent || "";
+          
+          const baseEmail = {
+            ...email,
+            originalText,
+            transformedText,
+            // 하위 호환성을 위해 유지
+            content: originalText,
+            previewContent: transformedText,
+          };
+          
           if (email.status === "draft" && email.scheduledAt) {
             const scheduledTime = new Date(email.scheduledAt);
             if (scheduledTime <= now) {
               updated = true;
               return {
-                ...email,
+                ...baseEmail,
                 status: "sent" as EmailStatus,
                 sentAt: email.sentAt || scheduledTime.toISOString(),
               };
             }
           }
-          return email;
+          return baseEmail;
         });
         
         // 업데이트된 이메일이 있으면 localStorage에 저장
@@ -194,9 +208,12 @@ function mockSendEmail(payload: SendEmailRequest): Promise<SendEmailResponse> {
       id: `email-${Date.now()}`,
       villagerId: payload.villagerId,
       villagerName: mockVillagers[payload.villagerId] || `주민 ${payload.villagerId}`,
-      subject: "", // 현재 DTO/DB에는 제목 필드가 없으므로 빈 값 사용
-      content: payload.originalText, // 유저가 작성한 원본 내용 저장
-      previewContent: transformedText, // 주민 말투로 변환된 내용
+      subject: payload.subject || "", // subject 필드 추가
+      originalText: payload.originalText, // 유저가 작성한 원본 내용 (필수)
+      transformedText: transformedText, // 주민 말투로 변환된 내용 (실제 전송된 내용)
+      // 하위 호환성을 위해 유지
+      content: payload.originalText,
+      previewContent: transformedText,
       status: payload.scheduledAt ? "draft" : "sent",
       createdAt: new Date().toISOString(),
       sentAt: payload.scheduledAt ? undefined : new Date().toISOString(),
