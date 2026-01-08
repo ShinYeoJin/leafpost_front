@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { sendEmail } from "@/lib/api/emails";
+import { useState, useEffect, useRef } from "react";
+import { sendEmail, previewEmailCard } from "@/lib/api/emails";
+import PreviewCard from "@/components/mail/PreviewCard";
 
 type MailCardFormProps = {
   villagerStickerUrl: string;
@@ -31,6 +32,20 @@ export default function MailCardForm({
   const [fromEmail, setFromEmail] = useState("");
   const [toEmail, setToEmail] = useState("");
   const [subject, setSubject] = useState("");
+  
+  // 필드별 에러 상태
+  const [fieldErrors, setFieldErrors] = useState<{
+    content?: string;
+    toEmail?: string;
+    subject?: string;
+  }>({});
+
+  // 미리보기 카드 상태
+  const [previewImageUrl, setPreviewImageUrl] = useState<string>("");
+  const [previewText, setPreviewText] = useState<string>("");
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // 컴포넌트 마운트 시 사용자 이메일 가져오기
   useEffect(() => {
@@ -40,24 +55,79 @@ export default function MailCardForm({
     }
   }, []);
 
-  const handleSendNow = async () => {
-    // 유효성 검사
+  // content 변경 시 debounce로 preview API 호출
+  useEffect(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
     if (!content.trim()) {
-      setSendError("내용을 입력해주세요.");
-      setTimeout(() => setSendError(null), 3000);
-      return;
-    }
-    if (!toEmail.trim()) {
-      setSendError("받는 사람 주소를 입력해주세요.");
-      setTimeout(() => setSendError(null), 3000);
-      return;
-    }
-    if (!subject.trim()) {
-      setSendError("제목을 입력해주세요.");
-      setTimeout(() => setSendError(null), 3000);
+      setPreviewImageUrl("");
+      setPreviewText("");
+      setPreviewError(null);
+      setIsPreviewLoading(false);
       return;
     }
 
+    setIsPreviewLoading(true);
+    setPreviewError(null);
+    debounceTimerRef.current = setTimeout(async () => {
+      try {
+        const response = await previewEmailCard(villagerId, content.trim());
+        setPreviewImageUrl(response.previewImageUrl);
+        setPreviewText(response.previewText);
+        setPreviewError(null);
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error("Preview failed");
+        setPreviewError(error.message);
+        setPreviewImageUrl("");
+        setPreviewText("");
+      } finally {
+        setIsPreviewLoading(false);
+      }
+    }, 500);
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [content, villagerId]);
+
+  const handleSendNow = async () => {
+    // 필드별 에러 초기화
+    const newFieldErrors: {
+      content?: string;
+      toEmail?: string;
+      subject?: string;
+    } = {};
+    
+    // 유효성 검사
+    if (!content.trim()) {
+      newFieldErrors.content = "내용을 입력해주세요.";
+    }
+    if (!toEmail.trim()) {
+      newFieldErrors.toEmail = "받는 사람 주소를 입력해주세요.";
+    }
+    if (!subject.trim()) {
+      newFieldErrors.subject = "제목을 입력해주세요.";
+    }
+
+    // 에러가 있으면 필드별 에러 표시 후 중단
+    if (Object.keys(newFieldErrors).length > 0) {
+      setFieldErrors(newFieldErrors);
+      setSendError("필수 입력 항목을 모두 입력해주세요.");
+      setTimeout(() => setSendError(null), 5000);
+      // 첫 번째 에러 필드로 스크롤
+      const firstErrorField = document.querySelector('[data-error-field]');
+      if (firstErrorField) {
+        firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+
+    // 에러 없으면 필드별 에러 초기화
+    setFieldErrors({});
     setIsSending(true);
     setSendSuccess(null);
     setSendError(null);
@@ -95,6 +165,13 @@ export default function MailCardForm({
   };
 
   const handleScheduleSend = async () => {
+    // 필드별 에러 초기화
+    const newFieldErrors: {
+      content?: string;
+      toEmail?: string;
+      subject?: string;
+    } = {};
+    
     if (!scheduledDateTime) {
       setSendError("예약 날짜/시간을 선택해주세요.");
       setTimeout(() => setSendError(null), 3000);
@@ -103,21 +180,30 @@ export default function MailCardForm({
 
     // 유효성 검사
     if (!content.trim()) {
-      setSendError("내용을 입력해주세요.");
-      setTimeout(() => setSendError(null), 3000);
-      return;
+      newFieldErrors.content = "내용을 입력해주세요.";
     }
     if (!toEmail.trim()) {
-      setSendError("받는 사람 주소를 입력해주세요.");
-      setTimeout(() => setSendError(null), 3000);
-      return;
+      newFieldErrors.toEmail = "받는 사람 주소를 입력해주세요.";
     }
     if (!subject.trim()) {
-      setSendError("제목을 입력해주세요.");
-      setTimeout(() => setSendError(null), 3000);
+      newFieldErrors.subject = "제목을 입력해주세요.";
+    }
+
+    // 에러가 있으면 필드별 에러 표시 후 중단
+    if (Object.keys(newFieldErrors).length > 0) {
+      setFieldErrors(newFieldErrors);
+      setSendError("필수 입력 항목을 모두 입력해주세요.");
+      setTimeout(() => setSendError(null), 5000);
+      // 첫 번째 에러 필드로 스크롤
+      const firstErrorField = document.querySelector('[data-error-field]');
+      if (firstErrorField) {
+        firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       return;
     }
 
+    // 에러 없으면 필드별 에러 초기화
+    setFieldErrors({});
     setIsSending(true);
     setSendSuccess(null);
     setSendError(null);
@@ -169,7 +255,7 @@ export default function MailCardForm({
   const [defaultDateTime] = useState(getDefaultDate());
 
   return (
-    <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-4 sm:p-5 md:p-6 max-w-2xl w-full border-2 border-sky-100 max-h-[90vh] overflow-y-auto">
+    <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-4 sm:p-5 md:p-6 max-w-6xl w-full border-2 border-sky-100 max-h-[90vh] overflow-y-auto">
       {/* 주민 이미지 (왼쪽 상단) */}
       <div className="flex items-start gap-4 mb-6">
         <div className="relative w-20 h-20 flex-shrink-0">
@@ -210,8 +296,10 @@ export default function MailCardForm({
         </div>
       </div>
 
-      {/* 입력 폼 */}
-      <div className="space-y-4">
+      {/* 입력 폼과 미리보기 카드 레이아웃 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+        {/* 입력 폼 섹션 */}
+        <div className="space-y-4">
         {/* 보내는 사람 주소 */}
         <div>
           <label className="block text-sm font-medium text-zinc-700 mb-2">
@@ -237,14 +325,31 @@ export default function MailCardForm({
           <input
             type="email"
             value={toEmail}
-            onChange={(e) => setToEmail(e.target.value)}
-            className="w-full px-4 py-2 border-2 border-sky-200 rounded-lg 
+            onChange={(e) => {
+              setToEmail(e.target.value);
+              if (fieldErrors.toEmail) {
+                setFieldErrors((prev) => {
+                  const newErrors = { ...prev };
+                  delete newErrors.toEmail;
+                  return newErrors;
+                });
+              }
+            }}
+            data-error-field={fieldErrors.toEmail ? "true" : undefined}
+            className={`w-full px-4 py-2 border-2 rounded-lg 
                      bg-white text-zinc-900
-                     focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
+                     focus:outline-none focus:ring-2 ${
+                       fieldErrors.toEmail
+                         ? "border-red-400 focus:ring-red-400 focus:border-red-400"
+                         : "border-sky-200 focus:ring-sky-400 focus:border-sky-400"
+                     }`}
             placeholder="받는 사람 이메일 주소"
             disabled={isSending}
             required
           />
+          {fieldErrors.toEmail && (
+            <p className="mt-1 text-sm text-red-600 font-medium">{fieldErrors.toEmail}</p>
+          )}
         </div>
 
         {/* 제목 */}
@@ -255,14 +360,31 @@ export default function MailCardForm({
           <input
             type="text"
             value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            className="w-full px-4 py-2 border-2 border-sky-200 rounded-lg 
+            onChange={(e) => {
+              setSubject(e.target.value);
+              if (fieldErrors.subject) {
+                setFieldErrors((prev) => {
+                  const newErrors = { ...prev };
+                  delete newErrors.subject;
+                  return newErrors;
+                });
+              }
+            }}
+            data-error-field={fieldErrors.subject ? "true" : undefined}
+            className={`w-full px-4 py-2 border-2 rounded-lg 
                      bg-white text-zinc-900
-                     focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
+                     focus:outline-none focus:ring-2 ${
+                       fieldErrors.subject
+                         ? "border-red-400 focus:ring-red-400 focus:border-red-400"
+                         : "border-sky-200 focus:ring-sky-400 focus:border-sky-400"
+                     }`}
             placeholder="이메일 제목"
             disabled={isSending}
             required
           />
+          {fieldErrors.subject && (
+            <p className="mt-1 text-sm text-red-600 font-medium">{fieldErrors.subject}</p>
+          )}
         </div>
 
         {/* 내용 */}
@@ -272,15 +394,32 @@ export default function MailCardForm({
           </label>
           <textarea
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={(e) => {
+              setContent(e.target.value);
+              if (fieldErrors.content) {
+                setFieldErrors((prev) => {
+                  const newErrors = { ...prev };
+                  delete newErrors.content;
+                  return newErrors;
+                });
+              }
+            }}
+            data-error-field={fieldErrors.content ? "true" : undefined}
             rows={6}
-            className="w-full px-4 py-2 border-2 border-sky-200 rounded-lg 
+            className={`w-full px-4 py-2 border-2 rounded-lg 
                      bg-white text-zinc-900
-                     focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 resize-none"
+                     focus:outline-none focus:ring-2 resize-none ${
+                       fieldErrors.content
+                         ? "border-red-400 focus:ring-red-400 focus:border-red-400"
+                         : "border-sky-200 focus:ring-sky-400 focus:border-sky-400"
+                     }`}
             placeholder={`${villagerName}의 말투로 변환될 내용을 입력해주세요.`}
             disabled={isSending}
             required
           />
+          {fieldErrors.content && (
+            <p className="mt-1 text-sm text-red-600 font-medium">{fieldErrors.content}</p>
+          )}
           <p className="mt-1 text-xs text-zinc-500">
             입력한 내용이 {villagerName}의 말투로 자동 변환되어 전송됩니다.
           </p>
@@ -304,6 +443,33 @@ export default function MailCardForm({
             />
           </div>
         )}
+        </div>
+
+        {/* 미리보기 카드 섹션 */}
+        <div className="flex flex-col items-center justify-start">
+          <h4 className="text-lg font-semibold text-zinc-700 mb-4 w-full text-center lg:text-left">
+            미리보기
+          </h4>
+          {content.trim() ? (
+            <PreviewCard
+              previewImageUrl={previewImageUrl}
+              previewText={previewText}
+              isLoading={isPreviewLoading}
+              error={previewError}
+            />
+          ) : (
+            <div className="w-full max-w-[360px] sm:max-w-[380px] md:max-w-[400px] aspect-[400/520] 
+                            flex items-center justify-center bg-gradient-to-br from-sky-50 to-sky-100 
+                            rounded-2xl border-2 border-dashed border-sky-200">
+              <div className="text-center px-4">
+                <span className="text-4xl mb-2 block">💌</span>
+                <p className="text-sm text-sky-600 font-medium">
+                  내용을 입력하면<br />미리보기가 표시됩니다
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* 버튼 */}
@@ -344,8 +510,15 @@ export default function MailCardForm({
 
       {sendError && (
         <div className="mt-4 p-3 bg-red-100 border-2 border-red-300 
-                        text-red-800 rounded-lg text-sm">
-          {sendError}
+                        text-red-800 rounded-lg text-sm font-medium
+                        animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <p>{sendError}</p>
+          </div>
         </div>
       )}
     </div>

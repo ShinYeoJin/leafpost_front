@@ -35,7 +35,30 @@ export default function MyPage() {
   };
 
   useEffect(() => {
-    loadUserInfo();
+    const loadData = () => {
+      loadUserInfo();
+    };
+
+    loadData();
+
+    // 페이지 포커스 시 최신 사용자 정보 로딩
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        loadData();
+      }
+    };
+
+    const handleFocus = () => {
+      loadData();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleFocus);
+    };
   }, []);
 
   const handleSaveProfile = (nickname: string, profileImage: string | null) => {
@@ -63,18 +86,62 @@ export default function MyPage() {
         console.error("주민 목록 로드 실패:", err);
       }
     };
+    
     loadVillagers();
+
+    // 페이지 포커스 시 최신 데이터 로딩
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        loadVillagers();
+      }
+    };
+
+    const handleFocus = () => {
+      loadVillagers();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleFocus);
+    };
   }, []);
 
   useEffect(() => {
     // 필터에 따라 이메일 가져오기
     // 예약 시간이 지난 이메일은 자동으로 'sent' 상태로 업데이트되므로
     // 'reserved' 필터는 'draft' 상태만 가져오고, 'sent' 필터는 'sent' 상태를 가져옵니다
-    const status: EmailStatus | undefined =
-      filter === "all" ? undefined : filter === "reserved" ? "draft" : "sent";
-    fetchEmails(status).catch(() => {
-      // 에러는 useEmails hook에서 처리됨
-    });
+    const loadEmails = () => {
+      const status: EmailStatus | undefined =
+        filter === "all" ? undefined : filter === "reserved" ? "draft" : "sent";
+      fetchEmails(status).catch(() => {
+        // 에러는 useEmails hook에서 처리됨
+      });
+    };
+
+    loadEmails();
+
+    // 페이지 포커스 시 최신 데이터 로딩 (다른 기기에서 수정한 내용 반영)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        loadEmails();
+      }
+    };
+
+    // 페이지 포커스 이벤트 리스너 추가
+    const handleFocus = () => {
+      loadEmails();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleFocus);
+    };
   }, [filter, fetchEmails]);
 
   const mapEmailToCardProps = (email: Email) => {

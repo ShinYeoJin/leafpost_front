@@ -29,11 +29,13 @@ export default function EntryPage() {
           </div>
           
           {/* 설명 텍스트 */}
-          <div className="text-lg sm:text-xl text-green-600 mb-10 leading-relaxed font-medium">
-            <p className="animate-continuous-fade-in-up">
-              <span className="text-2xl">🍃</span> LeafPost에 오신 것을 환영합니다! <span className="text-2xl">🍃</span>
+          <div className="text-sm sm:text-lg md:text-xl text-green-600 mb-10 leading-tight font-medium">
+            <p className="animate-continuous-fade-in-up px-2">
+              <span className="text-lg sm:text-2xl inline-block">🍃</span>{" "}
+              <span className="whitespace-nowrap">LeafPost에 오신 것을 환영합니다!</span>{" "}
+              <span className="text-lg sm:text-2xl inline-block">🍃</span>
             </p>
-            <p className="text-base text-green-500 mt-2 block animate-continuous-fade-in-up" style={{ animationDelay: '0.3s' }}>
+            <p className="text-xs sm:text-base text-green-500 mt-2 block animate-continuous-fade-in-up px-2" style={{ animationDelay: '0.3s' }}>
               친구나 주변사람들에게 내 마음을 전해보세요!
             </p>
           </div>

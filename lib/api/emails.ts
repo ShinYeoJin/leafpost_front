@@ -195,11 +195,68 @@ export async function previewEmail(villagerId: number, originalText: string): Pr
     console.log("[DEV] Mock Preview Email 사용 중 - 실제 API 호출하지 않음");
     return mockPreviewEmail(villagerId, originalText);
   }
-  
+
   // Production 환경에서는 실제 API 호출
   const response = await apiFetch<{ previewContent: string }>("/emails/preview", {
     method: "POST",
     body: JSON.stringify({ villagerId, content: originalText }),
+  });
+  return response.data;
+}
+
+/**
+ * Preview Email Card Request/Response Types
+ */
+export type PreviewEmailCardRequest = {
+  villagerId: number;
+  originalText: string;
+};
+
+export type PreviewEmailCardResponse = {
+  previewText: string;
+  previewImageUrl: string;
+};
+
+/**
+ * 개발 환경용 Mock Preview Email Card
+ * CORS 문제로 인한 로컬 개발 환경에서만 사용
+ */
+function mockPreviewEmailCard(
+  villagerId: number,
+  originalText: string
+): Promise<PreviewEmailCardResponse> {
+  // 간단한 말투 변환 시뮬레이션
+  const mockPreviewText = originalText
+    ? `${originalText} (${villagerId}번 주민 말투로 변환됨)`
+    : "안녕하세요! 편지를 작성해주세요~";
+  
+  // Mock 이미지 URL (실제로는 백엔드에서 sharp로 합성한 이미지 URL 반환)
+  const mockImageUrl = `https://via.placeholder.com/400x520/4A90E2/FFFFFF?text=Preview+Card+${villagerId}`;
+  
+  return Promise.resolve({
+    previewText: mockPreviewText,
+    previewImageUrl: mockImageUrl,
+  });
+}
+
+/**
+ * POST /emails/preview - 이메일 미리보기 카드 생성
+ * 백엔드에서 sharp로 주민 이미지 + 텍스트를 합성한 previewImageUrl과 previewText 반환
+ */
+export async function previewEmailCard(
+  villagerId: number,
+  originalText: string
+): Promise<PreviewEmailCardResponse> {
+  // 개발 환경에서만 Mock Preview Email Card 사용
+  if ((process.env.NODE_ENV as string) === "development") {
+    console.log("[DEV] Mock Preview Email Card 사용 중 - 실제 API 호출하지 않음");
+    return mockPreviewEmailCard(villagerId, originalText);
+  }
+
+  // Production 환경에서는 실제 API 호출
+  const response = await apiFetch<PreviewEmailCardResponse>("/emails/preview", {
+    method: "POST",
+    body: JSON.stringify({ villagerId, originalText }),
   });
   return response.data;
 }

@@ -43,6 +43,27 @@ export default function MainPage() {
     };
 
     fetchVillagers();
+
+    // 페이지 포커스 시 최신 데이터 로딩 (다른 기기에서 수정한 내용 반영)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // 페이지가 다시 보일 때 데이터 다시 불러오기
+        fetchVillagers();
+      }
+    };
+
+    // 페이지 포커스 이벤트 리스너 추가
+    const handleFocus = () => {
+      fetchVillagers();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleFocus);
+    };
   }, []);
 
   const handleVillagerClick = (villager: ApiVillager) => {

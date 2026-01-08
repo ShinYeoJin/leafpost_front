@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import AudioPlayer from "@/components/common/AudioPlayer";
 
 type LayoutProps = {
   children: React.ReactNode;
@@ -26,11 +25,7 @@ export default function MainLayout({ children }: LayoutProps) {
     }
   }, []);
 
-  return (
-    <>
-      <AudioPlayer src="/1-12 Noon (~Sunny Weather~).mp3" loop={true} volume={0.5} />
-      {children}
-    </>
-  );
+  // 음악은 MusicPlayerProvider에서 자동으로 관리됩니다
+  return <>{children}</>;
 }
 
