@@ -73,13 +73,14 @@ export default function EmailList() {
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 p-4 sm:p-6">
       {emails.map((email) => {
         const status = email.status === "sent" ? "sent" : "reserved";
-        const speechBubbleText = email.previewContent || email.content;
+        // transformedText를 우선 사용 (실제 전송된 주민 버전)
+        const speechBubbleText = email.transformedText || email.originalText || email.previewContent || email.content || "";
 
         return (
           <MailCardReadonly
             key={email.id}
             villagerStickerUrl="" // TODO: villager 정보에서 가져오기
-            villagerName={email.villagerName}
+            villagerName={email.villagerName || "알 수 없는 주민"} // 기본값 제공
             speechBubbleText={speechBubbleText}
             textSafeAreaContent={email.subject}
             status={status as "reserved" | "sent"}
