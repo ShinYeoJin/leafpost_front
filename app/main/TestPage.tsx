@@ -60,6 +60,7 @@ export default function TestPage() {
               speechBubbleText="기본 말풍선 텍스트"
               textSafeAreaContent="테스트 제목"
               villagerId={1}
+              toneType="RULE"
               originalText={mailCardText}
               onSendNow={handleSendNow}
               onScheduleSend={handleScheduleSend}

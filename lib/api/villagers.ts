@@ -8,6 +8,7 @@ export interface VillagerApi {
   name: string;
   imageUrl: string;
   previewText: string;
+  toneType?: string;
 }
 
 // 프론트에서 사용하는 Villager 타입
@@ -17,6 +18,7 @@ export type Villager = {
   imageUrl: string;
   iconUrl: string;
   toneExample: string;
+  toneType: string;
 };
 
 export type GetVillagersResponse = {
@@ -38,6 +40,7 @@ function normalizeVillager(item: any): Villager | null {
   if (!imageUrl || typeof imageUrl !== "string") return null;
 
   const toneExample = api.previewText ?? "";
+  const toneType = typeof api.toneType === "string" ? api.toneType : "RULE";
 
   return {
     id: api.id,
@@ -46,6 +49,7 @@ function normalizeVillager(item: any): Villager | null {
     // 아이콘이 별도로 없다면 imageUrl을 재사용
     iconUrl: imageUrl,
     toneExample,
+    toneType,
   };
 }
 
@@ -70,6 +74,7 @@ const mockVillagers: Villager[] = [
     toneExample: "안녕하세요! 오늘도 좋은 하루 되세요~",
     imageUrl: "https://acnhapi.com/v1/images/villagers/1",
     iconUrl: "https://acnhapi.com/v1/icons/villagers/1",
+    toneType: "RULE",
   },
   {
     id: 2,
@@ -77,6 +82,7 @@ const mockVillagers: Villager[] = [
     toneExample: "날씨가 정말 좋네요! 산책하기 좋은 날이에요~",
     imageUrl: "https://acnhapi.com/v1/images/villagers/2",
     iconUrl: "https://acnhapi.com/v1/icons/villagers/2",
+    toneType: "RULE",
   },
   {
     id: 3,
@@ -84,6 +90,7 @@ const mockVillagers: Villager[] = [
     toneExample: "오늘 뭐 하실 거예요? 함께 놀아요~",
     imageUrl: "https://acnhapi.com/v1/images/villagers/3",
     iconUrl: "https://acnhapi.com/v1/icons/villagers/3",
+    toneType: "RULE",
   },
   {
     id: 4,
@@ -91,6 +98,7 @@ const mockVillagers: Villager[] = [
     toneExample: "편지 받아서 정말 기뻐요! 고마워요~",
     imageUrl: "https://acnhapi.com/v1/images/villagers/4",
     iconUrl: "https://acnhapi.com/v1/icons/villagers/4",
+    toneType: "RULE",
   },
   {
     id: 5,
@@ -98,6 +106,7 @@ const mockVillagers: Villager[] = [
     toneExample: "오늘도 힘내세요! 응원할게요~",
     imageUrl: "https://acnhapi.com/v1/images/villagers/5",
     iconUrl: "https://acnhapi.com/v1/icons/villagers/5",
+    toneType: "RULE",
   },
   {
     id: 6,
@@ -105,6 +114,7 @@ const mockVillagers: Villager[] = [
     toneExample: "안녕하세요! 오늘도 즐거운 하루 되세요!",
     imageUrl: "https://acnhapi.com/v1/images/villagers/6",
     iconUrl: "https://acnhapi.com/v1/icons/villagers/6",
+    toneType: "RULE",
   },
 ];
 

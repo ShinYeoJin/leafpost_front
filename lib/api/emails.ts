@@ -183,7 +183,11 @@ export async function sendEmail(payload: SendEmailRequest): Promise<SendEmailRes
   return response.data;
 }
 
-export async function previewEmail(villagerId: number, originalText: string): Promise<{ previewContent: string }> {
+export async function previewEmail(
+  villagerId: number,
+  originalText: string,
+  toneType: string
+): Promise<{ previewContent: string }> {
   // 개발 환경에서만 Mock Preview Email 사용
   if ((process.env.NODE_ENV as string) === "development") {
     console.log("[DEV] Mock Preview Email 사용 중 - 실제 API 호출하지 않음");
@@ -196,7 +200,7 @@ export async function previewEmail(villagerId: number, originalText: string): Pr
     body: JSON.stringify({
       villagerId,
       originalText,
-      toneType: "RULE",
+      toneType,
     }),
   });
   return response.data;
@@ -243,7 +247,8 @@ function mockPreviewEmailCard(
  */
 export async function previewEmailCard(
   villagerId: number,
-  originalText: string
+  originalText: string,
+  toneType: string
 ): Promise<PreviewEmailCardResponse> {
   // 개발 환경에서만 Mock Preview Email Card 사용
   if ((process.env.NODE_ENV as string) === "development") {
@@ -257,7 +262,7 @@ export async function previewEmailCard(
     body: JSON.stringify({
       villagerId,
       originalText,
-      toneType: "RULE",
+      toneType,
     }),
   });
   return response.data;

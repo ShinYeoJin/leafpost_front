@@ -192,6 +192,7 @@ export default function MainPage() {
               villagerName={selectedVillager.name}
               villagerId={selectedVillager.id}
               villagerCatchphrase={selectedVillager.toneExample}
+              villagerToneType={selectedVillager.toneType}
               onSendNow={handleSendNow}
               onScheduleSend={handleScheduleSend}
             />

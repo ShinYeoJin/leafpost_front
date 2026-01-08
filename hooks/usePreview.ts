@@ -4,12 +4,14 @@ import { previewEmail } from "@/lib/api/emails";
 type UsePreviewOptions = {
   villagerId: number;
   originalText: string;
+  toneType: string;
   debounceMs?: number;
 };
 
 export function usePreview({
   villagerId,
   originalText,
+  toneType,
   debounceMs = 500,
 }: UsePreviewOptions) {
   const [previewText, setPreviewText] = useState<string>("");
@@ -33,7 +35,7 @@ export function usePreview({
     setError(null);
     debounceTimerRef.current = setTimeout(async () => {
       try {
-        const response = await previewEmail(villagerId, originalText);
+        const response = await previewEmail(villagerId, originalText, toneType);
         setPreviewText(response.previewContent);
         setError(null);
       } catch (err) {

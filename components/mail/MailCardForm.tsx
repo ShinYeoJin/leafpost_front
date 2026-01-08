@@ -9,6 +9,7 @@ type MailCardFormProps = {
   villagerName: string;
   villagerId: number;
   villagerCatchphrase: string;
+  villagerToneType: string;
   onSendNow?: () => void;
   onScheduleSend?: (scheduledDate: Date) => void;
 };
@@ -18,6 +19,7 @@ export default function MailCardForm({
   villagerName,
   villagerId,
   villagerCatchphrase,
+  villagerToneType,
   onSendNow,
   onScheduleSend,
 }: MailCardFormProps) {
@@ -72,7 +74,11 @@ export default function MailCardForm({
     setPreviewError(null);
     debounceTimerRef.current = setTimeout(async () => {
       try {
-        const response = await previewEmailCard(villagerId, content.trim());
+        const response = await previewEmailCard(
+          villagerId,
+          content.trim(),
+          villagerToneType
+        );
         setPreviewImageUrl(response.previewImageUrl);
         setPreviewText(response.previewText);
         setPreviewError(null);

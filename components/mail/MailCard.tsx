@@ -11,6 +11,7 @@ type MailCardProps = {
   textSafeAreaContent?: string;
   villagerId: number;
   originalText?: string;
+  toneType?: string;
   onSendNow?: () => void;
   onScheduleSend?: (scheduledDate: Date) => void;
 };
@@ -23,6 +24,7 @@ export default function MailCard({
   textSafeAreaContent,
   villagerId,
   originalText = "",
+  toneType,
   onSendNow,
   onScheduleSend,
 }: MailCardProps) {
@@ -56,7 +58,15 @@ export default function MailCard({
     setPreviewError(null);
     debounceTimerRef.current = setTimeout(async () => {
       try {
-        const response = await previewEmail(villagerId, originalText);
+        // toneType이 있는 경우에만 미리보기 API 호출
+        if (!toneType) {
+          setPreviewText("");
+          setPreviewError("말투 정보를 찾을 수 없습니다.");
+          setIsLoading(false);
+          return;
+        }
+
+        const response = await previewEmail(villagerId, originalText, toneType);
         setPreviewText(response.previewContent);
         setPreviewError(null);
       } catch (err) {
@@ -98,6 +108,14 @@ export default function MailCard({
     setSendError(null);
 
     try {
+      if (!toneType) {
+        setSendError("말투 정보를 찾을 수 없습니다. 다시 시도해주세요.");
+        setTimeout(() => {
+          setSendError(null);
+        }, 5000);
+        return;
+      }
+
       const content = previewText || originalText || speechBubbleText;
 
       // 받는 사람 이메일은 현재 로그인한 사용자의 이메일로 설정 (자기 자신에게 보내기)
@@ -120,7 +138,7 @@ export default function MailCard({
         villagerId,
         receiverEmail,
         originalText: content,
-        toneType: "RULE",
+        toneType,
         scheduledAt: now.toISOString(),
       });
 
@@ -171,6 +189,14 @@ export default function MailCard({
     setSendError(null);
 
     try {
+      if (!toneType) {
+        setSendError("말투 정보를 찾을 수 없습니다. 다시 시도해주세요.");
+        setTimeout(() => {
+          setSendError(null);
+        }, 5000);
+        return;
+      }
+
       const content = previewText || originalText || speechBubbleText;
 
       // 받는 사람 이메일은 현재 로그인한 사용자의 이메일로 설정 (자기 자신에게 예약 전송)
@@ -195,7 +221,7 @@ export default function MailCard({
         villagerId,
         receiverEmail,
         originalText: content,
-        toneType: "RULE",
+        toneType,
         scheduledAt: scheduledAt.toISOString(),
       });
 
