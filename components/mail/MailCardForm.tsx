@@ -162,10 +162,11 @@ export default function MailCardForm({
         villagerId,
         receiverEmail: toEmail.trim(),
         originalText: content.trim(),
-        toneType: villagerToneType,
+        toneType: villagerToneType.trim(), // villagerToneType 사용 (백엔드에서 받은 값)
         scheduledAt: now.toISOString(), // 즉시 전송 시 현재 시간
       };
       
+      console.log(`[MailCardForm] sendEmail (즉시 전송) - villagerToneType 값:`, villagerToneType);
       console.log(`[MailCardForm] sendEmail (즉시 전송) - payload:`, JSON.stringify(payload, null, 2));
       
       await sendEmail(payload);
@@ -248,10 +249,11 @@ export default function MailCardForm({
         villagerId,
         receiverEmail: toEmail.trim(),
         originalText: content.trim(),
-        toneType: villagerToneType,
+        toneType: villagerToneType.trim(), // villagerToneType 사용 (백엔드에서 받은 값)
         scheduledAt: scheduledAt.toISOString(),
       };
       
+      console.log(`[MailCardForm] sendEmail (예약 전송) - villagerToneType 값:`, villagerToneType);
       console.log(`[MailCardForm] sendEmail (예약 전송) - payload:`, JSON.stringify(payload, null, 2));
       
       await sendEmail(payload);

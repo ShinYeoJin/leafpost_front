@@ -203,15 +203,18 @@ export default function MainPage() {
 
             {/* MailCardForm 컴포넌트 */}
             {selectedVillager.toneType ? (
-              <MailCardForm
-                villagerStickerUrl={selectedVillager.imageUrl}
-                villagerName={selectedVillager.name}
-                villagerId={selectedVillager.id}
-                villagerCatchphrase={selectedVillager.toneExample}
-                villagerToneType={selectedVillager.toneType}
-                onSendNow={handleSendNow}
-                onScheduleSend={handleScheduleSend}
-              />
+              <>
+                {console.log(`[MainPage] MailCardForm 렌더링 - villagerToneType:`, selectedVillager.toneType)}
+                <MailCardForm
+                  villagerStickerUrl={selectedVillager.imageUrl}
+                  villagerName={selectedVillager.name}
+                  villagerId={selectedVillager.id}
+                  villagerCatchphrase={selectedVillager.toneExample}
+                  villagerToneType={selectedVillager.toneType}
+                  onSendNow={handleSendNow}
+                  onScheduleSend={handleScheduleSend}
+                />
+              </>
             ) : (
               <div className="bg-red-50 border-2 border-red-300 rounded-xl p-6 text-center">
                 <p className="text-red-700 font-medium">
@@ -219,6 +222,9 @@ export default function MainPage() {
                 </p>
                 <p className="text-sm text-red-600 mt-2">
                   (villagerId: {selectedVillager.id}, toneType: {selectedVillager.toneType || "undefined"})
+                </p>
+                <p className="text-xs text-red-500 mt-2">
+                  전체 villager 데이터: {JSON.stringify(selectedVillager, null, 2)}
                 </p>
               </div>
             )}

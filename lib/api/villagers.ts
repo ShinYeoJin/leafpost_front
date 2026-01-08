@@ -51,29 +51,58 @@ function normalizeVillager(item: any): Villager | null {
   // toneType 추출: 다양한 응답 구조 대응
   let toneType: string | undefined;
   
+  console.log(`[Villagers] normalizeVillager - toneType 추출 시도 (villagerId: ${api.id})`);
+  console.log(`[Villagers] normalizeVillager - 가능한 toneType 필드들:`, {
+    "api.toneType": api.toneType,
+    "item.toneType": (item as any).toneType,
+    "item.tone_type": (item as any).tone_type,
+    "item.tone": (item as any).tone,
+    "item.tones": (item as any).tones,
+    "item.tones?.[0]": Array.isArray((item as any).tones) ? (item as any).tones[0] : undefined,
+  });
+  
   // 케이스 1: 직접 필드 (api.toneType)
   if (typeof api.toneType === "string" && api.toneType.trim()) {
     toneType = api.toneType;
+    console.log(`[Villagers] normalizeVillager - 케이스 1: api.toneType = "${toneType}"`);
   }
-  // 케이스 2: tones 배열의 첫 번째 항목 (api.tones[0].toneType)
+  // 케이스 1-2: snake_case (item.tone_type)
+  else if (typeof (item as any).tone_type === "string" && (item as any).tone_type.trim()) {
+    toneType = (item as any).tone_type;
+    console.log(`[Villagers] normalizeVillager - 케이스 1-2: item.tone_type = "${toneType}"`);
+  }
+  // 케이스 2: tones 배열의 첫 번째 항목 (item.tones[0].toneType)
   else if (Array.isArray((item as any).tones) && (item as any).tones.length > 0) {
     const firstTone = (item as any).tones[0];
     if (typeof firstTone?.toneType === "string" && firstTone.toneType.trim()) {
       toneType = firstTone.toneType;
+      console.log(`[Villagers] normalizeVillager - 케이스 2: item.tones[0].toneType = "${toneType}"`);
+    } else if (typeof firstTone?.tone_type === "string" && firstTone.tone_type.trim()) {
+      toneType = firstTone.tone_type;
+      console.log(`[Villagers] normalizeVillager - 케이스 2-2: item.tones[0].tone_type = "${toneType}"`);
     }
   }
-  // 케이스 3: tone 객체 (api.tone.toneType)
-  else if ((item as any).tone && typeof (item as any).tone.toneType === "string") {
-    toneType = (item as any).tone.toneType;
+  // 케이스 3: tone 객체 (item.tone.toneType)
+  else if ((item as any).tone && typeof (item as any).tone === "object") {
+    if (typeof (item as any).tone.toneType === "string" && (item as any).tone.toneType.trim()) {
+      toneType = (item as any).tone.toneType;
+      console.log(`[Villagers] normalizeVillager - 케이스 3: item.tone.toneType = "${toneType}"`);
+    } else if (typeof (item as any).tone.tone_type === "string" && (item as any).tone.tone_type.trim()) {
+      toneType = (item as any).tone.tone_type;
+      console.log(`[Villagers] normalizeVillager - 케이스 3-2: item.tone.tone_type = "${toneType}"`);
+    }
   }
 
   // toneType이 없으면 경고 및 기본값 사용 (개발 환경에서만)
   if (!toneType) {
-    console.warn(
-      `[Villagers] normalizeVillager - toneType을 찾을 수 없음 (villagerId: ${api.id}). ` +
-      `응답 구조: ${JSON.stringify(item, null, 2)}. 기본값 "RULE" 사용.`
+    console.error(
+      `[Villagers] normalizeVillager - ⚠️ toneType을 찾을 수 없음 (villagerId: ${api.id})! ` +
+      `기본값 "RULE" 사용. 전체 응답 구조:`,
+      JSON.stringify(item, null, 2)
     );
-    toneType = "RULE"; // 개발 환경 기본값
+    toneType = "RULE"; // 개발 환경 기본값 (실제로는 서버에서 제공해야 함)
+  } else {
+    console.log(`[Villagers] normalizeVillager - ✅ toneType 추출 성공: "${toneType}"`);
   }
 
   const normalized = {
