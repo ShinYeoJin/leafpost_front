@@ -171,11 +171,56 @@ function mockSendEmail(payload: SendEmailRequest): Promise<SendEmailResponse> {
 export async function sendEmail(payload: SendEmailRequest): Promise<SendEmailResponse> {
   // 디버깅: 전송 payload 확인
   console.log("[Emails] sendEmail - payload:", JSON.stringify(payload, null, 2));
+  console.log("[Emails] sendEmail - payload 타입 확인:", {
+    villagerId: typeof payload.villagerId,
+    receiverEmail: typeof payload.receiverEmail,
+    originalText: typeof payload.originalText,
+    toneType: typeof payload.toneType,
+    scheduledAt: typeof payload.scheduledAt,
+  });
+  
+  // 필수 필드 검증
+  if (typeof payload.villagerId !== "number" || !Number.isInteger(payload.villagerId)) {
+    const error = new Error(`villagerId가 유효하지 않습니다: ${payload.villagerId}`);
+    console.error("[Emails] sendEmail - villagerId 검증 실패:", payload);
+    throw error;
+  }
+  
+  if (!payload.receiverEmail || typeof payload.receiverEmail !== "string" || !payload.receiverEmail.trim()) {
+    const error = new Error(`receiverEmail이 유효하지 않습니다: ${payload.receiverEmail}`);
+    console.error("[Emails] sendEmail - receiverEmail 검증 실패:", payload);
+    throw error;
+  }
+  
+  if (!payload.originalText || typeof payload.originalText !== "string" || !payload.originalText.trim()) {
+    const error = new Error(`originalText가 유효하지 않습니다: ${payload.originalText}`);
+    console.error("[Emails] sendEmail - originalText 검증 실패:", payload);
+    throw error;
+  }
   
   // toneType 검증
-  if (!payload.toneType || !payload.toneType.trim()) {
-    const error = new Error("toneType이 필수입니다. villager 데이터를 확인해주세요.");
-    console.error("[Emails] sendEmail - toneType 누락:", payload);
+  if (!payload.toneType || typeof payload.toneType !== "string" || !payload.toneType.trim()) {
+    const error = new Error(`toneType이 유효하지 않습니다: ${payload.toneType}`);
+    console.error("[Emails] sendEmail - toneType 검증 실패:", payload);
+    throw error;
+  }
+  
+  // scheduledAt 검증 (ISO 8601 형식)
+  if (!payload.scheduledAt || typeof payload.scheduledAt !== "string" || !payload.scheduledAt.trim()) {
+    const error = new Error(`scheduledAt이 유효하지 않습니다: ${payload.scheduledAt}`);
+    console.error("[Emails] sendEmail - scheduledAt 검증 실패:", payload);
+    throw error;
+  }
+  
+  // ISO 8601 형식 검증 (간단한 체크)
+  try {
+    const scheduledDate = new Date(payload.scheduledAt);
+    if (isNaN(scheduledDate.getTime())) {
+      throw new Error("유효하지 않은 날짜 형식");
+    }
+  } catch (err) {
+    const error = new Error(`scheduledAt이 유효한 ISO 8601 형식이 아닙니다: ${payload.scheduledAt}`);
+    console.error("[Emails] sendEmail - scheduledAt 형식 검증 실패:", payload);
     throw error;
   }
   
@@ -187,12 +232,27 @@ export async function sendEmail(payload: SendEmailRequest): Promise<SendEmailRes
   
   // Production 환경에서는 실제 API 호출
   console.log(`[Emails] sendEmail - 실제 API 호출: POST /emails`);
-  const response = await apiFetch<SendEmailResponse>("/emails", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-  console.log("[Emails] sendEmail - 응답:", response.data);
-  return response.data;
+  console.log(`[Emails] sendEmail - 요청 URL: ${process.env.NEXT_PUBLIC_API_BASE_URL || ""}/emails`);
+  console.log(`[Emails] sendEmail - 요청 body (stringified):`, JSON.stringify(payload));
+  
+  try {
+    const response = await apiFetch<SendEmailResponse>("/emails", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    console.log("[Emails] sendEmail - 응답 성공:", response.data);
+    return response.data;
+  } catch (err) {
+    console.error("[Emails] sendEmail - 에러 발생:", err);
+    if (err instanceof Error) {
+      console.error("[Emails] sendEmail - 에러 상세:", {
+        message: err.message,
+        name: err.name,
+        stack: err.stack,
+      });
+    }
+    throw err;
+  }
 }
 
 export async function previewEmail(

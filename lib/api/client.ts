@@ -70,6 +70,14 @@ export async function apiFetch<T = unknown>(
     else data = (await response.text()) as unknown as T;
 
     if (!response.ok) {
+      // 에러 응답 상세 로깅
+      console.error(`[API] ${response.status} ${response.statusText} - ${path}`, {
+        status: response.status,
+        statusText: response.statusText,
+        data: data,
+        requestBody: config.body ? (typeof config.body === 'string' ? config.body : JSON.stringify(config.body)) : undefined,
+      });
+      
       throw new ApiClientError(
         `API request failed: ${response.statusText}`,
         response.status,
