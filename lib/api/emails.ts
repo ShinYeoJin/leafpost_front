@@ -1,7 +1,21 @@
 import { apiFetch } from "./client";
 
 export type EmailStatus = "draft" | "sent" | "deleted";
-export type Email = { id: string; villagerId: number; villagerName: string; subject: string; content: string; previewContent?: string; status: EmailStatus; createdAt: string; sentAt?: string; deletedAt?: string; scheduledAt?: string; };
+export type Email = { 
+  id: string; 
+  villagerId: number; 
+  villagerName?: string; // optional (백엔드 응답에 없을 수 있음)
+  subject: string; 
+  originalText: string; // 사용자가 입력한 원본 텍스트
+  transformedText?: string; // 주민 버전으로 변환된 텍스트 (실제 전송된 내용)
+  content?: string; // 하위 호환성을 위해 유지 (deprecated)
+  previewContent?: string; // 하위 호환성을 위해 유지 (deprecated)
+  status?: EmailStatus; // optional (백엔드 응답에 없을 수 있음)
+  createdAt: string; 
+  sentAt?: string; 
+  deletedAt?: string; 
+  scheduledAt?: string; 
+};
 
 export type SendEmailRequest = {
   villagerId: number;
@@ -85,23 +99,54 @@ export async function getEmails(status?: EmailStatus): Promise<Email[]> {
   const response = await apiFetch<unknown>(url, { method: "GET" });
 
   const raw = response.data as any;
+  
+  console.log("[Emails] getEmails - 전체 응답:", JSON.stringify(raw, null, 2));
 
-  // 백엔드 응답이 배열 또는 { data: [...] }, { items: [...] } 등일 수 있으므로 안전하게 처리
+  // 백엔드 응답 구조 처리: { success: true, data: { data: [...] } }
+  let emailsArray: any[] = [];
+  
   if (Array.isArray(raw)) {
-    return raw as Email[];
-  }
-  if (raw && Array.isArray(raw.data)) {
-    return raw.data as Email[];
-  }
-  if (raw && Array.isArray(raw.items)) {
-    return raw.items as Email[];
-  }
-  if (raw && Array.isArray(raw.results)) {
-    return raw.results as Email[];
+    emailsArray = raw;
+  } else if (raw && raw.data) {
+    // { data: [...] } 또는 { data: { data: [...] } }
+    if (Array.isArray(raw.data)) {
+      emailsArray = raw.data;
+    } else if (raw.data && Array.isArray(raw.data.data)) {
+      // 중첩된 구조: { data: { data: [...] } }
+      emailsArray = raw.data.data;
+    }
+  } else if (raw && Array.isArray(raw.items)) {
+    emailsArray = raw.items;
+  } else if (raw && Array.isArray(raw.results)) {
+    emailsArray = raw.results;
   }
 
-  // 그 외의 경우에는 빈 배열 반환 (런타임 오류 방지)
-  return [];
+  // Email 타입으로 변환 (백엔드 필드명 그대로 사용)
+  const emails: Email[] = emailsArray.map((item: any) => {
+    // 하위 호환성: content 필드가 있으면 originalText로 매핑
+    const originalText = item.originalText || item.content || "";
+    const transformedText = item.transformedText || item.previewContent || "";
+    
+    return {
+      id: item.id || "",
+      villagerId: item.villagerId || 0,
+      villagerName: item.villagerName, // 백엔드에서 제공하지 않을 수 있음
+      subject: item.subject || "",
+      originalText,
+      transformedText,
+      // 하위 호환성을 위해 유지
+      content: originalText,
+      previewContent: transformedText,
+      status: item.status || "sent", // 기본값: sent
+      createdAt: item.createdAt || "",
+      sentAt: item.sentAt,
+      deletedAt: item.deletedAt,
+      scheduledAt: item.scheduledAt,
+    };
+  });
+
+  console.log("[Emails] getEmails - 변환된 이메일 목록:", emails);
+  return emails;
 }
 
 /**

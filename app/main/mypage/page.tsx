@@ -155,28 +155,38 @@ export default function MyPage() {
       }
     }
     
-    // 유저가 작성한 원본 내용을 표시
-    // 백엔드에서 content 필드에 originalText가 들어오는지 확인 필요
-    // 일단 content를 우선 사용하고, 없으면 previewContent 사용
-    const speechBubbleText = email.content || email.previewContent || "";
+    // 주민 버전으로 변환된 텍스트(transformedText)를 표시 (실제 전송된 내용)
+    // transformedText가 없으면 originalText를 fallback으로 사용
+    const speechBubbleText = email.transformedText || email.originalText || email.content || email.previewContent || "";
     
     // 디버깅: 이메일 데이터 확인
     if (!speechBubbleText) {
       console.warn("[MyPage] 이메일 내용이 비어있음:", {
         id: email.id,
+        transformedText: email.transformedText,
+        originalText: email.originalText,
         content: email.content,
         previewContent: email.previewContent,
         subject: email.subject,
       });
+    } else {
+      console.log("[MyPage] 이메일 내용 표시:", {
+        id: email.id,
+        transformedText: email.transformedText,
+        originalText: email.originalText,
+        표시할_내용: speechBubbleText,
+      });
     }
 
-    // 주민 이미지 찾기
+    // 주민 이미지 및 이름 찾기
     const villager = villagers.find((v) => v.id === email.villagerId);
     const villagerStickerUrl = villager?.iconUrl || villager?.imageUrl || "";
+    // 백엔드 응답에 villagerName이 없으면 주민 목록에서 찾기
+    const villagerName = email.villagerName || villager?.name || "알 수 없는 주민";
 
     return {
       villagerStickerUrl,
-      villagerName: email.villagerName,
+      villagerName,
       speechBubbleText,
       textSafeAreaContent: email.subject, // 유저가 작성한 제목
       status,
