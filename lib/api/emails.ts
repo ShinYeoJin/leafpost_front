@@ -9,6 +9,7 @@ export type SendEmailRequest = {
   originalText: string;
   toneType: string;
   scheduledAt: string;
+  subject: string; // 백엔드에서 필수로 요구
 };
 
 export type SendEmailResponse = {
@@ -186,15 +187,52 @@ export async function sendEmail(payload: SendEmailRequest): Promise<SendEmailRes
     throw error;
   }
   
+  // receiverEmail 검증
   if (!payload.receiverEmail || typeof payload.receiverEmail !== "string" || !payload.receiverEmail.trim()) {
     const error = new Error(`receiverEmail이 유효하지 않습니다: ${payload.receiverEmail}`);
     console.error("[Emails] sendEmail - receiverEmail 검증 실패:", payload);
     throw error;
   }
   
+  const trimmedEmail = payload.receiverEmail.trim();
+  
+  // 이메일 형식 검증
+  if (!isValidEmail(trimmedEmail)) {
+    const error = new Error("receiverEmail이 유효한 이메일 형식이 아닙니다.");
+    console.error("[Emails] sendEmail - receiverEmail 형식 오류:", trimmedEmail);
+    throw error;
+  }
+  
+  // 이메일 길이 검증 (255자 이하)
+  if (trimmedEmail.length > 255) {
+    const error = new Error("receiverEmail은 255자 이하여야 합니다.");
+    console.error("[Emails] sendEmail - receiverEmail 길이 초과:", trimmedEmail.length);
+    throw error;
+  }
+  
+  // originalText 검증
   if (!payload.originalText || typeof payload.originalText !== "string" || !payload.originalText.trim()) {
     const error = new Error(`originalText가 유효하지 않습니다: ${payload.originalText}`);
     console.error("[Emails] sendEmail - originalText 검증 실패:", payload);
+    throw error;
+  }
+  
+  // subject 검증 (백엔드에서 필수)
+  if (!payload.subject || typeof payload.subject !== "string") {
+    const error = new Error("subject가 필수입니다.");
+    console.error("[Emails] sendEmail - subject 누락:", payload);
+    throw error;
+  }
+  
+  const trimmedSubject = payload.subject.trim();
+  
+  // subject가 비어있으면 기본값 사용
+  const finalSubject = trimmedSubject || "제목 없음";
+  
+  // subject 길이 검증 (255자 이하)
+  if (finalSubject.length > 255) {
+    const error = new Error("subject는 255자 이하여야 합니다.");
+    console.error("[Emails] sendEmail - subject 길이 초과:", finalSubject.length);
     throw error;
   }
   
@@ -224,6 +262,13 @@ export async function sendEmail(payload: SendEmailRequest): Promise<SendEmailRes
     throw error;
   }
   
+  // 최종 payload 구성 (검증된 값 사용)
+  const validatedPayload = {
+    ...payload,
+    receiverEmail: trimmedEmail,
+    subject: finalSubject,
+  };
+  
   // 개발 환경에서만 Mock Send Email 사용
   if ((process.env.NODE_ENV as string) === "development") {
     console.log("[DEV] Mock Send Email 사용 중 - 실제 API 호출하지 않음");
@@ -233,12 +278,12 @@ export async function sendEmail(payload: SendEmailRequest): Promise<SendEmailRes
   // Production 환경에서는 실제 API 호출
   console.log(`[Emails] sendEmail - 실제 API 호출: POST /emails`);
   console.log(`[Emails] sendEmail - 요청 URL: ${process.env.NEXT_PUBLIC_API_BASE_URL || ""}/emails`);
-  console.log(`[Emails] sendEmail - 요청 body (stringified):`, JSON.stringify(payload));
+  console.log(`[Emails] sendEmail - 요청 body (stringified):`, JSON.stringify(validatedPayload));
   
   try {
     const response = await apiFetch<SendEmailResponse>("/emails", {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: JSON.stringify(validatedPayload),
     });
     console.log("[Emails] sendEmail - 응답 성공:", response.data);
     return response.data;
@@ -327,13 +372,22 @@ function mockPreviewEmailCard(
 }
 
 /**
+ * 이메일 형식 검증 유틸리티
+ */
+function isValidEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+
+/**
  * POST /emails/preview - 이메일 미리보기 카드 생성
  * 백엔드에서 sharp로 주민 이미지 + 텍스트를 합성한 previewImageUrl과 previewText 반환
  */
 export async function previewEmailCard(
   villagerId: number,
   originalText: string,
-  toneType: string
+  toneType: string,
+  receiverEmail: string // Preview API에서도 receiverEmail 필수
 ): Promise<PreviewEmailCardResponse> {
   // toneType 검증
   if (!toneType || !toneType.trim()) {
@@ -342,10 +396,34 @@ export async function previewEmailCard(
     throw error;
   }
   
+  // receiverEmail 검증
+  if (!receiverEmail || typeof receiverEmail !== "string" || !receiverEmail.trim()) {
+    const error = new Error("receiverEmail이 필수입니다.");
+    console.error("[Emails] previewEmailCard - receiverEmail 누락:", { villagerId, receiverEmail });
+    throw error;
+  }
+  
+  const trimmedEmail = receiverEmail.trim();
+  
+  // 이메일 형식 검증
+  if (!isValidEmail(trimmedEmail)) {
+    const error = new Error("receiverEmail이 유효한 이메일 형식이 아닙니다.");
+    console.error("[Emails] previewEmailCard - receiverEmail 형식 오류:", trimmedEmail);
+    throw error;
+  }
+  
+  // 이메일 길이 검증 (255자 이하)
+  if (trimmedEmail.length > 255) {
+    const error = new Error("receiverEmail은 255자 이하여야 합니다.");
+    console.error("[Emails] previewEmailCard - receiverEmail 길이 초과:", trimmedEmail.length);
+    throw error;
+  }
+  
   const payload = {
     villagerId,
     originalText,
     toneType,
+    receiverEmail: trimmedEmail,
   };
   
   console.log("[Emails] previewEmailCard - payload:", JSON.stringify(payload, null, 2));
