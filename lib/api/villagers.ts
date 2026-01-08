@@ -48,7 +48,7 @@ function normalizeVillager(item: any): Villager | null {
 
   const toneExample = api.previewText ?? "";
   
-  // toneType 추출: 다양한 응답 구조 대응
+  // toneType 추출: 백엔드 응답에서만 추출 (fallback 없음)
   let toneType: string | undefined;
   
   console.log(`[Villagers] normalizeVillager - toneType 추출 시도 (villagerId: ${api.id})`);
@@ -71,7 +71,7 @@ function normalizeVillager(item: any): Villager | null {
     toneType = (item as any).tone_type;
     console.log(`[Villagers] normalizeVillager - 케이스 1-2: item.tone_type = "${toneType}"`);
   }
-  // 케이스 2: tones 배열의 첫 번째 항목 (item.tones[0].toneType)
+  // 케이스 2: tones 배열의 첫 번째 항목 (item.tones[0].toneType) - 가장 일반적인 케이스
   else if (Array.isArray((item as any).tones) && (item as any).tones.length > 0) {
     const firstTone = (item as any).tones[0];
     if (typeof firstTone?.toneType === "string" && firstTone.toneType.trim()) {
@@ -93,18 +93,20 @@ function normalizeVillager(item: any): Villager | null {
     }
   }
 
-  // toneType이 없으면 경고 및 기본값 사용 (개발 환경에서만)
+  // toneType이 없으면 에러 처리 (fallback 제거)
   if (!toneType) {
     console.error(
-      `[Villagers] normalizeVillager - ⚠️ toneType을 찾을 수 없음 (villagerId: ${api.id})! ` +
-      `기본값 "RULE" 사용. 전체 응답 구조:`,
+      `[Villagers] normalizeVillager - ❌ toneType을 찾을 수 없음 (villagerId: ${api.id})! ` +
+      `백엔드 응답에 toneType 정보가 없습니다. 전체 응답 구조:`,
       JSON.stringify(item, null, 2)
     );
-    toneType = "RULE"; // 개발 환경 기본값 (실제로는 서버에서 제공해야 함)
+    // toneType이 없으면 null 반환하여 해당 villager를 제외
+    return null;
   } else {
     console.log(`[Villagers] normalizeVillager - ✅ toneType 추출 성공: "${toneType}"`);
   }
 
+  // toneType이 없으면 이미 위에서 null 반환했으므로, 여기서는 항상 toneType이 존재함
   const normalized = {
     id: api.id,
     name: api.name,
@@ -112,7 +114,7 @@ function normalizeVillager(item: any): Villager | null {
     // 아이콘이 별도로 없다면 imageUrl을 재사용
     iconUrl: imageUrl,
     toneExample,
-    toneType,
+    toneType: toneType, // 백엔드에서 받은 실제 값만 사용 (fallback 없음)
   };
 
   console.log(`[Villagers] normalizeVillager - 정규화 완료 (villagerId: ${api.id}, toneType: ${toneType}):`, normalized);
@@ -131,58 +133,13 @@ function normalizeVillagersArray(arr: any[]): Villager[] {
 
 /**
  * 개발 환경용 Mock Villager 데이터
- * CORS 문제로 인한 로컬 개발 환경에서 UI 테스트를 위해 사용
- * toneExample은 hover 시 말투 예시로 사용됨
+ * ⚠️ 주의: toneType은 백엔드 villager_tones 테이블에서만 가져와야 하므로
+ *          Mock 데이터는 사용하지 않습니다.
+ *          실제 환경에서는 백엔드 API 응답만 사용해야 합니다.
  */
 const mockVillagers: Villager[] = [
-  {
-    id: 1,
-    name: "톰",
-    toneExample: "안녕하세요! 오늘도 좋은 하루 되세요~",
-    imageUrl: "https://acnhapi.com/v1/images/villagers/1",
-    iconUrl: "https://acnhapi.com/v1/icons/villagers/1",
-    toneType: "RULE",
-  },
-  {
-    id: 2,
-    name: "이사벨",
-    toneExample: "날씨가 정말 좋네요! 산책하기 좋은 날이에요~",
-    imageUrl: "https://acnhapi.com/v1/images/villagers/2",
-    iconUrl: "https://acnhapi.com/v1/icons/villagers/2",
-    toneType: "RULE",
-  },
-  {
-    id: 3,
-    name: "마샬",
-    toneExample: "오늘 뭐 하실 거예요? 함께 놀아요~",
-    imageUrl: "https://acnhapi.com/v1/images/villagers/3",
-    iconUrl: "https://acnhapi.com/v1/icons/villagers/3",
-    toneType: "RULE",
-  },
-  {
-    id: 4,
-    name: "레이몬드",
-    toneExample: "편지 받아서 정말 기뻐요! 고마워요~",
-    imageUrl: "https://acnhapi.com/v1/images/villagers/4",
-    iconUrl: "https://acnhapi.com/v1/icons/villagers/4",
-    toneType: "RULE",
-  },
-  {
-    id: 5,
-    name: "쥬디",
-    toneExample: "오늘도 힘내세요! 응원할게요~",
-    imageUrl: "https://acnhapi.com/v1/images/villagers/5",
-    iconUrl: "https://acnhapi.com/v1/icons/villagers/5",
-    toneType: "RULE",
-  },
-  {
-    id: 6,
-    name: "셰리",
-    toneExample: "안녕하세요! 오늘도 즐거운 하루 되세요!",
-    imageUrl: "https://acnhapi.com/v1/images/villagers/6",
-    iconUrl: "https://acnhapi.com/v1/icons/villagers/6",
-    toneType: "RULE",
-  },
+  // Mock 데이터는 toneType 정보가 없으므로 사용하지 않음
+  // 백엔드 API가 항상 toneType을 포함해야 함
 ];
 
 export async function getVillagers(): Promise<GetVillagersResponse> {
@@ -230,11 +187,12 @@ export async function getVillagers(): Promise<GetVillagersResponse> {
       isValid: false,
     };
   } catch (error) {
-    console.error("[Villagers] API 호출 실패, mock 데이터로 대체합니다.", error);
-    // 백엔드 장애 시에도 화면은 동작하도록 mock 데이터 사용
+    console.error("[Villagers] API 호출 실패:", error);
+    // 백엔드 장애 시 빈 배열 반환 (toneType이 없는 mock 데이터 사용 금지)
+    console.warn("[Villagers] 백엔드 API 호출 실패로 빈 배열 반환. toneType 정보가 없으면 이메일 전송이 불가능합니다.");
     return {
-      villagers: mockVillagers,
-      isValid: true,
+      villagers: [],
+      isValid: false,
     };
   }
 }

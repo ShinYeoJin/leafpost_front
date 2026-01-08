@@ -60,7 +60,7 @@ export default function TestPage() {
               speechBubbleText="기본 말풍선 텍스트"
               textSafeAreaContent="테스트 제목"
               villagerId={1}
-              toneType="RULE"
+              toneType="RULE" // ⚠️ 테스트용 하드코딩 - 실제 환경에서는 백엔드 API에서 받은 toneType만 사용해야 함
               originalText={mailCardText}
               onSendNow={handleSendNow}
               onScheduleSend={handleScheduleSend}

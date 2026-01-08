@@ -75,13 +75,19 @@ export default function MainPage() {
       전체데이터: villager,
     });
     
+    // toneType이 없으면 선택 불가 처리
     if (!villager.toneType || !villager.toneType.trim()) {
       console.error(
-        `[MainPage] handleVillagerClick - toneType 누락! villagerId: ${villager.id}, villager:`,
+        `[MainPage] handleVillagerClick - ❌ toneType 누락! villagerId: ${villager.id}. ` +
+        `이 주민은 말투 정보가 없어 이메일 전송이 불가능합니다.`,
         villager
       );
+      // 에러 메시지 표시 (선택사항)
+      alert(`${villager.name}의 말투 정보를 불러올 수 없습니다. 페이지를 새로고침해주세요.`);
+      return; // 모달을 열지 않음
     }
     
+    console.log(`[MainPage] handleVillagerClick - ✅ toneType 확인됨: "${villager.toneType}"`);
     setSelectedVillager(villager);
     setIsModalOpen(true);
   };
