@@ -74,11 +74,34 @@ export async function login(email: string, password: string): Promise<LoginRespo
   }
   
   // Production 환경에서는 실제 API 호출
-  const response = await apiFetch<LoginResponse>("/auth/login", {
-    method: "POST",
-    body: JSON.stringify({ email, password }),
-  });
-  return response.data;
+  console.log("[Auth] login - 로그인 API 호출 시작");
+  console.log("[Auth] login - 요청 URL:", `${process.env.NEXT_PUBLIC_API_BASE_URL || ""}/auth/login`);
+  console.log("[Auth] login - credentials: include 사용");
+  
+  try {
+    const response = await apiFetch<LoginResponse>("/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    });
+    
+    // 모바일 환경에서 쿠키 설정 확인을 위한 디버깅
+    console.log("[Auth] login - 응답 성공:", {
+      status: response.status,
+      statusText: response.statusText,
+      hasData: !!response.data,
+    });
+    
+    // 쿠키 확인 (document.cookie는 httpOnly 쿠키는 보이지 않지만, 디버깅용)
+    if (typeof document !== "undefined") {
+      console.log("[Auth] login - 현재 document.cookie:", document.cookie || "(쿠키 없음)");
+      console.log("[Auth] login - 참고: httpOnly 쿠키는 document.cookie에서 보이지 않습니다.");
+    }
+    
+    return response.data;
+  } catch (error) {
+    console.error("[Auth] login - 로그인 실패:", error);
+    throw error;
+  }
 }
 
 /**

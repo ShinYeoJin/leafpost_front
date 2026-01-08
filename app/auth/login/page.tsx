@@ -21,11 +21,22 @@ export default function LoginPage() {
       // 백엔드에서 httpOnly 쿠키로 토큰을 설정하므로 클라이언트에서 저장할 필요 없음
       // 사용자 이메일만 localStorage에 저장 (UI 표시용)
       localStorage.setItem("userEmail", email);
+      
+      // 모바일 환경에서 쿠키 설정 확인을 위한 짧은 대기
+      // (쿠키 설정이 비동기적으로 완료될 수 있음)
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       router.push("/main");
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "로그인에 실패했습니다.";
       setError(errorMessage);
+      
+      // 모바일 환경에서 쿠키 관련 에러인 경우 추가 안내
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      if (isMobile && errorMessage.includes("401") || errorMessage.includes("인증")) {
+        console.warn("[Login] 모바일 환경에서 인증 실패 - 쿠키 설정 문제일 수 있습니다.");
+      }
     } finally {
       setIsLoading(false);
     }

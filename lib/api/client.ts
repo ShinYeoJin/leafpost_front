@@ -51,14 +51,46 @@ export async function apiFetch<T = unknown>(
   }
 
   try {
+    const fullUrl = path.startsWith("http") ? path : `${BASE_URL}${path}`;
+    
+    // 모바일 환경 디버깅을 위한 로그 (로그인 API만)
+    if (path.includes("/auth/login")) {
+      console.log("[API] apiFetch - 로그인 요청:", {
+        url: fullUrl,
+        method: fetchConfig.method || "GET",
+        credentials: "include",
+        hasBody: !!fetchConfig.body,
+        headers: requestHeaders,
+      });
+    }
+    
     const response = await fetch(
-      path.startsWith("http") ? path : `${BASE_URL}${path}`,
+      fullUrl,
       {
         ...fetchConfig,
         headers: requestHeaders,
-        credentials: "include", // 쿠키 기반 인증을 위해 쿠키 포함
+        credentials: "include", // 쿠키 기반 인증을 위해 쿠키 포함 (모바일/데스크톱 모두 필수)
       }
     );
+
+    // 로그인 API 응답 헤더 확인 (모바일 디버깅용)
+    if (path.includes("/auth/login")) {
+      const setCookieHeader = response.headers.get("set-cookie");
+      console.log("[API] apiFetch - 로그인 응답 헤더:", {
+        status: response.status,
+        statusText: response.statusText,
+        setCookie: setCookieHeader || "(Set-Cookie 헤더 없음)",
+        allHeaders: Object.fromEntries(response.headers.entries()),
+      });
+      
+      // 모바일 환경 감지
+      const isMobile = typeof window !== "undefined" && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      console.log("[API] apiFetch - 환경 정보:", {
+        isMobile,
+        userAgent: typeof window !== "undefined" ? navigator.userAgent : "N/A",
+        origin: typeof window !== "undefined" ? window.location.origin : "N/A",
+      });
+    }
 
     if (response.status === 401 && onUnauthorized) {
       await onUnauthorized();
