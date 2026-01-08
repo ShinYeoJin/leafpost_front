@@ -151,6 +151,7 @@ export default function MailCard({
         originalText: content,
         toneType,
         scheduledAt: now.toISOString(),
+        subject: textSafeAreaContent?.trim() || "제목 없음", // subject 필수 (textSafeAreaContent 사용 또는 기본값)
       };
       
       console.log(`[MailCard] sendEmail (즉시 전송) - payload:`, JSON.stringify(payload, null, 2));
@@ -243,6 +244,7 @@ export default function MailCard({
         originalText: content,
         toneType,
         scheduledAt: scheduledAt.toISOString(),
+        subject: textSafeAreaContent?.trim() || "제목 없음", // subject 필수 (textSafeAreaContent 사용 또는 기본값)
       };
       
       console.log(`[MailCard] sendEmail (예약 전송) - payload:`, JSON.stringify(payload, null, 2));
