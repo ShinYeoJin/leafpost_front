@@ -99,13 +99,29 @@ export default function MailCard({
 
     try {
       const content = previewText || originalText || speechBubbleText;
-      const subject = textSafeAreaContent || "제목 없음";
+
+      // 받는 사람 이메일은 현재 로그인한 사용자의 이메일로 설정 (자기 자신에게 보내기)
+      let receiverEmail = "";
+      if (typeof window !== "undefined") {
+        receiverEmail = localStorage.getItem("userEmail") || "";
+      }
+
+      if (!receiverEmail) {
+        setSendError("받는 사람 이메일 정보를 찾을 수 없습니다. 이메일 작성 페이지에서 다시 시도해주세요.");
+        setTimeout(() => {
+          setSendError(null);
+        }, 5000);
+        return;
+      }
       
+      const now = new Date();
       // POST /emails 호출
       const response = await sendEmail({
         villagerId,
-        subject,
-        content,
+        receiverEmail,
+        originalText: content,
+        toneType: "RULE",
+        scheduledAt: now.toISOString(),
       });
 
       // 서버에서 반환한 imageUrl 처리
@@ -156,15 +172,30 @@ export default function MailCard({
 
     try {
       const content = previewText || originalText || speechBubbleText;
-      const subject = textSafeAreaContent || "제목 없음";
+
+      // 받는 사람 이메일은 현재 로그인한 사용자의 이메일로 설정 (자기 자신에게 예약 전송)
+      let receiverEmail = "";
+      if (typeof window !== "undefined") {
+        receiverEmail = localStorage.getItem("userEmail") || "";
+      }
+
+      if (!receiverEmail) {
+        setSendError("받는 사람 이메일 정보를 찾을 수 없습니다. 이메일 작성 페이지에서 다시 시도해주세요.");
+        setTimeout(() => {
+          setSendError(null);
+        }, 5000);
+        return;
+      }
+
       const scheduledAt = new Date();
       scheduledAt.setHours(scheduledAt.getHours() + 1);
 
       // POST /emails 호출 (예약 전송)
       const response = await sendEmail({
         villagerId,
-        subject,
-        content,
+        receiverEmail,
+        originalText: content,
+        toneType: "RULE",
         scheduledAt: scheduledAt.toISOString(),
       });
 

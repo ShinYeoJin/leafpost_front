@@ -5,11 +5,10 @@ export type Email = { id: string; villagerId: number; villagerName: string; subj
 
 export type SendEmailRequest = {
   villagerId: number;
-  subject: string;
-  content: string;
-  scheduledAt?: string;
-  fromEmail?: string;
-  toEmail?: string;
+  receiverEmail: string;
+  originalText: string;
+  toneType: string;
+  scheduledAt: string;
 };
 
 export type SendEmailResponse = {
@@ -125,7 +124,7 @@ function mockPreviewEmail(villagerId: number, originalText: string): Promise<{ p
  */
 function mockSendEmail(payload: SendEmailRequest): Promise<SendEmailResponse> {
   // 가짜 변환된 텍스트 생성
-  const transformedText = payload.content
+  const transformedText = payload.originalText
     .replace(/\./g, "~")
     .replace(/!/g, "!")
     .replace(/\?/g, "?");
@@ -149,22 +148,14 @@ function mockSendEmail(payload: SendEmailRequest): Promise<SendEmailResponse> {
       id: `email-${Date.now()}`,
       villagerId: payload.villagerId,
       villagerName: mockVillagers[payload.villagerId] || `주민 ${payload.villagerId}`,
-      subject: payload.subject,
-      content: payload.content, // 유저가 작성한 원본 내용 저장
+      subject: "", // 현재 DTO/DB에는 제목 필드가 없으므로 빈 값 사용
+      content: payload.originalText, // 유저가 작성한 원본 내용 저장
       previewContent: transformedText, // 주민 말투로 변환된 내용
       status: payload.scheduledAt ? "draft" : "sent",
       createdAt: new Date().toISOString(),
       sentAt: payload.scheduledAt ? undefined : new Date().toISOString(),
       scheduledAt: payload.scheduledAt, // 예약 시간 저장
     };
-    
-    // Mock 환경에서는 실제 메일을 보낼 수 없지만, 
-    // 프로덕션 환경에서는 백엔드 API가 payload.fromEmail과 payload.toEmail을 사용하여 실제 메일을 전송합니다.
-    if (payload.fromEmail && payload.toEmail) {
-      console.log(`[Mock] 이메일 전송 시뮬레이션: ${payload.fromEmail} -> ${payload.toEmail}`);
-      console.log(`[Mock] 제목: ${payload.subject}`);
-      console.log(`[Mock] 내용: ${payload.content}`);
-    }
     
     emails.unshift(newEmail);
     localStorage.setItem("sentEmails", JSON.stringify(emails));
@@ -185,7 +176,10 @@ export async function sendEmail(payload: SendEmailRequest): Promise<SendEmailRes
   }
   
   // Production 환경에서는 실제 API 호출
-  const response = await apiFetch<SendEmailResponse>("/emails", { method: "POST", body: JSON.stringify(payload) });
+  const response = await apiFetch<SendEmailResponse>("/emails", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
   return response.data;
 }
 
@@ -199,7 +193,11 @@ export async function previewEmail(villagerId: number, originalText: string): Pr
   // Production 환경에서는 실제 API 호출
   const response = await apiFetch<{ previewContent: string }>("/emails/preview", {
     method: "POST",
-    body: JSON.stringify({ villagerId, content: originalText }),
+    body: JSON.stringify({
+      villagerId,
+      originalText,
+      toneType: "RULE",
+    }),
   });
   return response.data;
 }
@@ -256,7 +254,11 @@ export async function previewEmailCard(
   // Production 환경에서는 실제 API 호출
   const response = await apiFetch<PreviewEmailCardResponse>("/emails/preview", {
     method: "POST",
-    body: JSON.stringify({ villagerId, originalText }),
+    body: JSON.stringify({
+      villagerId,
+      originalText,
+      toneType: "RULE",
+    }),
   });
   return response.data;
 }

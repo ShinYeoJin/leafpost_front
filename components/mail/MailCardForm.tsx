@@ -33,11 +33,10 @@ export default function MailCardForm({
   const [toEmail, setToEmail] = useState("");
   const [subject, setSubject] = useState("");
   
-  // 필드별 에러 상태
+  // 필드별 에러 상태 (subject는 선택사항이므로 제거)
   const [fieldErrors, setFieldErrors] = useState<{
     content?: string;
     toEmail?: string;
-    subject?: string;
   }>({});
 
   // 미리보기 카드 상태
@@ -99,18 +98,14 @@ export default function MailCardForm({
     const newFieldErrors: {
       content?: string;
       toEmail?: string;
-      subject?: string;
     } = {};
     
-    // 유효성 검사
+    // 유효성 검사 (subject는 선택사항이므로 검증하지 않음)
     if (!content.trim()) {
       newFieldErrors.content = "내용을 입력해주세요.";
     }
     if (!toEmail.trim()) {
       newFieldErrors.toEmail = "받는 사람 주소를 입력해주세요.";
-    }
-    if (!subject.trim()) {
-      newFieldErrors.subject = "제목을 입력해주세요.";
     }
 
     // 에러가 있으면 필드별 에러 표시 후 중단
@@ -134,12 +129,13 @@ export default function MailCardForm({
 
     try {
       // 유저가 입력한 내용을 주민 말투로 변환하여 전송
+      const now = new Date();
       await sendEmail({
         villagerId,
-        subject: subject.trim(),
-        content: content.trim(),
-        fromEmail: fromEmail.trim(),
-        toEmail: toEmail.trim(),
+        receiverEmail: toEmail.trim(),
+        originalText: content.trim(),
+        toneType: "RULE",
+        scheduledAt: now.toISOString(), // 즉시 전송 시 현재 시간
       });
 
       setSendSuccess("이메일이 성공적으로 전송되었습니다.");
@@ -169,7 +165,6 @@ export default function MailCardForm({
     const newFieldErrors: {
       content?: string;
       toEmail?: string;
-      subject?: string;
     } = {};
     
     if (!scheduledDateTime) {
@@ -178,15 +173,12 @@ export default function MailCardForm({
       return;
     }
 
-    // 유효성 검사
+    // 유효성 검사 (subject는 선택사항이므로 검증하지 않음)
     if (!content.trim()) {
       newFieldErrors.content = "내용을 입력해주세요.";
     }
     if (!toEmail.trim()) {
       newFieldErrors.toEmail = "받는 사람 주소를 입력해주세요.";
-    }
-    if (!subject.trim()) {
-      newFieldErrors.subject = "제목을 입력해주세요.";
     }
 
     // 에러가 있으면 필드별 에러 표시 후 중단
@@ -214,11 +206,10 @@ export default function MailCardForm({
       // 유저가 입력한 내용을 주민 말투로 변환하여 예약 전송
       await sendEmail({
         villagerId,
-        subject: subject.trim(),
-        content: content.trim(),
+        receiverEmail: toEmail.trim(),
+        originalText: content.trim(),
+        toneType: "RULE",
         scheduledAt: scheduledAt.toISOString(),
-        fromEmail: fromEmail.trim(),
-        toEmail: toEmail.trim(),
       });
 
       setSendSuccess(`이메일이 ${scheduledAt.toLocaleString()}에 전송 예약되었습니다.`);
@@ -352,39 +343,26 @@ export default function MailCardForm({
           )}
         </div>
 
-        {/* 제목 */}
+        {/* 제목 (선택사항) */}
         <div>
           <label className="block text-sm font-medium text-zinc-700 mb-2">
-            제목 <span className="text-red-500">*</span>
+            제목 <span className="text-zinc-400 text-xs">(선택사항)</span>
           </label>
           <input
             type="text"
             value={subject}
             onChange={(e) => {
               setSubject(e.target.value);
-              if (fieldErrors.subject) {
-                setFieldErrors((prev) => {
-                  const newErrors = { ...prev };
-                  delete newErrors.subject;
-                  return newErrors;
-                });
-              }
             }}
-            data-error-field={fieldErrors.subject ? "true" : undefined}
-            className={`w-full px-4 py-2 border-2 rounded-lg 
+            className="w-full px-4 py-2 border-2 border-sky-200 rounded-lg 
                      bg-white text-zinc-900
-                     focus:outline-none focus:ring-2 ${
-                       fieldErrors.subject
-                         ? "border-red-400 focus:ring-red-400 focus:border-red-400"
-                         : "border-sky-200 focus:ring-sky-400 focus:border-sky-400"
-                     }`}
-            placeholder="이메일 제목"
+                     focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
+            placeholder="이메일 제목 (선택사항)"
             disabled={isSending}
-            required
           />
-          {fieldErrors.subject && (
-            <p className="mt-1 text-sm text-red-600 font-medium">{fieldErrors.subject}</p>
-          )}
+          <p className="mt-1 text-xs text-zinc-500">
+            제목을 입력하지 않으면 서버에서 "제목없음"으로 처리됩니다.
+          </p>
         </div>
 
         {/* 내용 */}
