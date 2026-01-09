@@ -43,12 +43,15 @@ export default function MyPage() {
       // ✅ 프로필 이미지 값 확인 (다양한 필드명 지원)
       // 타입 단언을 사용하여 다양한 필드명 접근 허용
       const userDataWithProfile = userData as UserDataWithProfileImage;
+      
+      // ✅ getUserInfo()에서 이미 profileImage와 profileUrl을 통일하여 반환하므로
+      // userData.profileImage 또는 userData.profileUrl을 우선 사용
       const profileImageValue = 
-        userDataWithProfile.profileImage || 
-        userDataWithProfile.profileUrl || 
-        userDataWithProfile.profile_image || 
-        userDataWithProfile.imageUrl ||
-        userDataWithProfile.profileImageUrl ||
+        (userData.profileImage && userData.profileImage.trim()) ||
+        (userData.profileUrl && userData.profileUrl.trim()) ||
+        (userDataWithProfile.profile_image && userDataWithProfile.profile_image.trim()) || 
+        (userDataWithProfile.imageUrl && userDataWithProfile.imageUrl.trim()) ||
+        (userDataWithProfile.profileImageUrl && userDataWithProfile.profileImageUrl.trim()) ||
         null;
       
       console.log("[MyPage] loadUserInfo - ✅ 사용자 정보 조회 성공:", {
@@ -67,16 +70,23 @@ export default function MyPage() {
       });
       
       // ✅ 백엔드 응답 기준으로 사용자 정보 설정
+      // profileImageValue가 null이거나 빈 문자열이면 null로 설정
+      const finalProfileImage = profileImageValue && profileImageValue.trim() ? profileImageValue : null;
+      
       setUserInfo({
         email: userData.email,
         nickname: userData.nickname,
-        profileImage: profileImageValue,
+        profileImage: finalProfileImage,
       });
       
       console.log("[MyPage] loadUserInfo - state 설정 완료:", {
         email: userData.email,
         nickname: userData.nickname,
-        profileImage: profileImageValue,
+        profileImage: finalProfileImage,
+        profileImage_원본값: profileImageValue,
+        profileImage_최종값: finalProfileImage,
+        profileImage_타입: typeof finalProfileImage,
+        profileImage_길이: finalProfileImage ? finalProfileImage.length : 0,
       });
       
       // ✅ localStorage도 동기화 (UI 표시용)

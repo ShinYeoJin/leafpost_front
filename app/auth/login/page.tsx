@@ -48,13 +48,41 @@ export default function LoginPage() {
       
       console.log("[LoginPage] ✅ 로그인 API 성공");
       
-      // ✅ 실제 인증 상태 확인: /auth/me API 호출
+      // ✅ 실제 인증 상태 확인: /users/me API 호출
       // 쿠키 반영 대기 대신 실제 API로 인증 상태 확인
       console.log("[LoginPage] 인증 상태 확인 중... (/users/me 호출)");
-      const { checkAuth } = await import("@/lib/api/auth");
-      const authResult = await checkAuth();
       
-      if (authResult.authenticated) {
+      // ✅ iOS 환경에서는 쿠키 설정 대기 시간 추가
+      if (isIOS) {
+        console.log("[LoginPage] iOS 환경 - 쿠키 설정 대기 중... (2초)");
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        console.log("[LoginPage] iOS 환경 - 쿠키 설정 대기 완료");
+      }
+      
+      const { checkAuth } = await import("@/lib/api/auth");
+      let authResult;
+      let retryCount = 0;
+      const maxRetries = isIOS ? 2 : 1; // iOS는 재시도 1회 추가
+      
+      // ✅ iOS 환경에서는 재시도 로직 추가
+      while (retryCount < maxRetries) {
+        try {
+          authResult = await checkAuth();
+          if (authResult.authenticated) {
+            break; // 인증 성공 시 루프 종료
+          }
+        } catch (err) {
+          console.error(`[LoginPage] 인증 확인 실패 (시도 ${retryCount + 1}/${maxRetries}):`, err);
+        }
+        
+        retryCount++;
+        if (retryCount < maxRetries && isIOS) {
+          console.log(`[LoginPage] iOS 환경 - 재시도 대기 중... (${retryCount + 1}초)`);
+          await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 1000));
+        }
+      }
+      
+      if (authResult && authResult.authenticated) {
         console.log("[LoginPage] ✅ 인증 확인 성공 - /main으로 리다이렉트");
         // ✅ 크로스 도메인 쿠키 문제로 middleware에서 인증 체크 불가능
         // 클라이언트에서 직접 /main으로 이동
@@ -73,6 +101,7 @@ export default function LoginPage() {
           console.error("[LoginPage] - iOS Safari는 ITP로 인해 쿠키가 차단될 수 있음");
           console.error("[LoginPage] - 사용자가 사이트를 직접 방문한 경우에만 쿠키가 설정됨");
           console.error("[LoginPage] - 쿠키 설정 후 다음 요청에서 쿠키 포함 여부 확인 필요");
+          console.error("[LoginPage] - 재시도 후에도 실패한 경우, 백엔드 쿠키 설정 확인 필요");
         }
         setError("로그인에 실패했습니다. 다시 시도해주세요.");
       }
