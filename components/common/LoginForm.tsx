@@ -25,21 +25,19 @@ export default function LoginForm({ onSuccess, onError }: LoginFormProps) {
       const tokens = await login(email, password);
       onSuccess?.(tokens);
       
-      console.log("[LoginForm] 로그인 API 응답:", {
-        hasResponse: !!tokens,
-        hasAccessToken: !!tokens?.accessToken,
-        note: "쿠키 기반 인증이므로 response body는 선택적",
-      });
+      console.log("[LoginForm] ✅ 로그인 API 성공");
+      console.log("[LoginForm] 참고: 쿠키 기반 인증이므로 response body는 선택적입니다");
       
       // ✅ 쿠키가 브라우저에 반영되도록 충분한 대기
       // sameSite: 'none' 쿠키는 크로스 도메인 설정이므로 브라우저 처리 시간이 필요함
-      // login 함수 내부에서 이미 500ms 대기하므로 추가 대기
+      // login 함수 내부에서 이미 1500ms 대기하므로 추가 대기
       // 크로스 도메인 쿠키는 더 많은 시간이 필요할 수 있음
-      console.log("[LoginForm] 쿠키 반영 대기 중...");
-      await new Promise(resolve => setTimeout(resolve, 800));
+      console.log("[LoginForm] 쿠키 반영 대기 중... (크로스 도메인 쿠키는 시간이 필요할 수 있음)");
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
-      console.log("[LoginForm] ✅ 로그인 성공 - /main으로 리다이렉트");
+      console.log("[LoginForm] ✅ 쿠키 반영 대기 완료 - /main으로 리다이렉트");
       console.log("[LoginForm] 참고: httpOnly 쿠키는 document.cookie에서 보이지 않지만, 브라우저는 자동으로 포함합니다.");
+      console.log("[LoginForm] middleware에서 쿠키를 확인하여 인증 상태를 판단합니다.");
       
       // ✅ 완전한 페이지 리로드를 통해 middleware가 새로 실행되도록 함
       // router.push는 클라이언트 사이드 네비게이션이라 쿠키가 반영되지 않을 수 있음

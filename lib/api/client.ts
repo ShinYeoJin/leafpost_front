@@ -73,44 +73,23 @@ export async function apiFetch<T = unknown>(
       }
     );
 
-    // 로그인 API 응답 헤더 확인 (모바일 디버깅용)
+    // 로그인 API 응답 확인 (디버깅용)
     if (path.includes("/auth/login")) {
-      // Set-Cookie 헤더는 브라우저 보안 정책으로 인해 JavaScript에서 읽을 수 없음
-      // 하지만 응답 헤더에 포함되어 있는지 확인은 가능
-      const setCookieHeader = response.headers.get("set-cookie");
-      const allHeaders = Object.fromEntries(response.headers.entries());
+      // ⚠️ 중요: Set-Cookie 헤더는 브라우저 보안 정책으로 인해 JavaScript에서 읽을 수 없습니다.
+      // response.headers.get("set-cookie")는 항상 null을 반환합니다. 이는 정상입니다.
+      // 쿠키는 백엔드에서 Set-Cookie 헤더로 설정되며, 브라우저가 자동으로 저장합니다.
+      // httpOnly 쿠키는 document.cookie에서도 보이지 않지만, 브라우저는 자동으로 포함합니다.
       
-      console.log("[API] apiFetch - 로그인 응답 헤더:", {
+      console.log("[API] apiFetch - 로그인 응답:", {
         status: response.status,
         statusText: response.statusText,
-        setCookie: setCookieHeader || "(Set-Cookie 헤더 없음 - 브라우저 보안 정책으로 읽을 수 없을 수 있음)",
-        hasSetCookie: !!setCookieHeader,
-        allHeaders: allHeaders,
+        note: "Set-Cookie 헤더는 브라우저 보안 정책으로 JavaScript에서 읽을 수 없습니다 (정상 동작)",
       });
       
-      // 모바일 환경 감지
-      const isMobile = typeof window !== "undefined" && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      console.log("[API] apiFetch - 환경 정보:", {
-        isMobile,
-        userAgent: typeof window !== "undefined" ? navigator.userAgent : "N/A",
-        origin: typeof window !== "undefined" ? window.location.origin : "N/A",
-        protocol: typeof window !== "undefined" ? window.location.protocol : "N/A",
-        isHTTPS: typeof window !== "undefined" ? window.location.protocol === "https:" : "N/A",
-      });
-      
-      // ⚠️ sameSite: 'none' 쿠키는 HTTPS에서만 작동함
-      if (typeof window !== "undefined" && window.location.protocol !== "https:") {
-        console.warn("[API] ⚠️ sameSite: 'none' 쿠키는 HTTPS에서만 작동합니다. 현재 프로토콜:", window.location.protocol);
-      }
-      
-      // Set-Cookie 헤더가 없는 경우 경고
-      if (!setCookieHeader) {
-        console.error("[API] ❌ Set-Cookie 헤더가 응답에 없습니다. 백엔드 CORS 설정을 확인하세요.");
-        console.error("[API] 백엔드에서 확인 필요:", {
-          "Access-Control-Allow-Credentials": "true",
-          "Access-Control-Allow-Origin": "프론트엔드 도메인 (와일드카드 '*' 사용 불가)",
-          "Set-Cookie": "accessToken, refreshToken (sameSite: 'none', secure: true)",
-        });
+      // ✅ 성공 응답이면 쿠키는 백엔드에서 설정되었을 것입니다
+      if (response.ok) {
+        console.log("[API] ✅ 로그인 성공 (201) - 쿠키는 백엔드에서 설정되었습니다");
+        console.log("[API] 참고: httpOnly 쿠키는 document.cookie에서 보이지 않지만, 브라우저는 자동으로 저장하고 포함합니다");
       }
     }
 
