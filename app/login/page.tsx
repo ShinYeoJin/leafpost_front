@@ -33,8 +33,11 @@ export default function LoginPage() {
       
       if (authResult.authenticated) {
         console.log("[LoginPage] ✅ 인증 확인 성공 - /main으로 리다이렉트");
+        console.log("[LoginPage] window.location.href = '/main' 실행");
         // ✅ 완전한 페이지 리로드를 통해 middleware가 새로 실행되도록 함
+        // 리다이렉트 후 즉시 return하여 이후 코드 실행 방지
         window.location.href = "/main";
+        return; // ✅ 리다이렉트 후 즉시 종료
       } else {
         console.error("[LoginPage] ❌ 인증 확인 실패 - 쿠키가 설정되지 않았거나 만료됨");
         setError("로그인에 실패했습니다. 다시 시도해주세요.");
