@@ -32,6 +32,10 @@ type GetUserInfoResponse = {
   nickname: string;
   profileImage?: string;
   profileUrl?: string;
+  profile_image?: string; // 백엔드 필드명 변형 지원
+  imageUrl?: string; // 백엔드 필드명 변형 지원
+  profileImageUrl?: string; // 백엔드 필드명 변형 지원
+  [key: string]: any; // 추가 필드 지원
 };
 
 /**

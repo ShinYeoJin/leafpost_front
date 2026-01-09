@@ -10,6 +10,18 @@ import { getVillagers, type Villager } from "@/lib/api/villagers";
 import { getUserInfo, useProfile } from "@/hooks/useProfile";
 import Image from "next/image";
 
+// ✅ 백엔드 응답에서 다양한 필드명을 지원하기 위한 타입
+type UserDataWithProfileImage = {
+  email: string;
+  nickname: string;
+  profileImage?: string;
+  profileUrl?: string;
+  profile_image?: string;
+  imageUrl?: string;
+  profileImageUrl?: string;
+  [key: string]: any;
+};
+
 export default function MyPage() {
   const [filter, setFilter] = useState<"all" | "reserved" | "sent">("all");
   const { emails, isLoading, error, fetchEmails } = useEmails();
@@ -29,12 +41,14 @@ export default function MyPage() {
       const userData = await getUserInfo();
       
       // ✅ 프로필 이미지 값 확인 (다양한 필드명 지원)
+      // 타입 단언을 사용하여 다양한 필드명 접근 허용
+      const userDataWithProfile = userData as UserDataWithProfileImage;
       const profileImageValue = 
-        userData.profileImage || 
-        userData.profileUrl || 
-        userData.profile_image || 
-        userData.imageUrl ||
-        userData.profileImageUrl ||
+        userDataWithProfile.profileImage || 
+        userDataWithProfile.profileUrl || 
+        userDataWithProfile.profile_image || 
+        userDataWithProfile.imageUrl ||
+        userDataWithProfile.profileImageUrl ||
         null;
       
       console.log("[MyPage] loadUserInfo - ✅ 사용자 정보 조회 성공:", {
