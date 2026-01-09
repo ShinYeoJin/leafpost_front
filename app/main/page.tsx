@@ -6,6 +6,7 @@ import Header from "@/components/common/Header";
 import VillagerCard from "@/components/villagers/VillagerCard";
 import MailCardForm from "@/components/mail/MailCardForm";
 import { getVillagers, type Villager as ApiVillager } from "@/lib/api/villagers";
+import { checkAuth } from "@/lib/api/auth";
 
 export default function MainPage() {
   const router = useRouter();
@@ -15,8 +16,38 @@ export default function MainPage() {
   const [isValidResponse, setIsValidResponse] = useState<boolean>(true);
   const [selectedVillager, setSelectedVillager] = useState<ApiVillager | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAuthChecked, setIsAuthChecked] = useState(false);
+
+  // ✅ 크로스 도메인 쿠키 문제로 middleware에서 인증 체크 불가능
+  // 클라이언트에서 인증 상태 확인
+  useEffect(() => {
+    const verifyAuth = async () => {
+      try {
+        console.log("[MainPage] 인증 상태 확인 중...");
+        const authResult = await checkAuth();
+        
+        if (!authResult.authenticated) {
+          console.log("[MainPage] ❌ 인증 실패 - /login으로 리다이렉트");
+          router.push("/login");
+          return;
+        }
+        
+        console.log("[MainPage] ✅ 인증 확인 성공");
+        setIsAuthChecked(true);
+      } catch (err) {
+        console.error("[MainPage] 인증 확인 중 에러:", err);
+        router.push("/login");
+      }
+    };
+    
+    verifyAuth();
+  }, [router]);
 
   useEffect(() => {
+    // 인증 확인 전에는 데이터를 불러오지 않음
+    if (!isAuthChecked) {
+      return;
+    }
     const fetchVillagers = async () => {
       try {
         setIsLoading(true);
@@ -64,7 +95,7 @@ export default function MainPage() {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("focus", handleFocus);
     };
-  }, []);
+  }, [isAuthChecked]); // ✅ isAuthChecked가 true일 때만 실행
 
   const handleVillagerClick = (villager: ApiVillager) => {
     // 디버깅: 선택된 villager의 toneType 확인
@@ -106,6 +137,18 @@ export default function MainPage() {
     // 예약 전송 완료 후 모달 닫기 (MailCard 내부에서 처리됨)
     // 필요시 추가 로직 구현
   };
+
+  // ✅ 인증 확인 전에는 로딩 표시
+  if (!isAuthChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sky-50 via-yellow-50 to-white">
+        <div className="text-center">
+          <div className="text-4xl mb-4">🔐</div>
+          <p className="text-lg text-gray-600 font-medium">인증 확인 중...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-sky-50 via-yellow-50 to-white">
