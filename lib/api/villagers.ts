@@ -19,8 +19,7 @@ export type Villager = {
   iconUrl: string;
   toneExample: string;
   toneType: string;
-  popularityRank?: number; // 인기 순위 (1, 2, 3 등)
-  popularityCount?: number; // 선택 횟수
+  usageCount?: number; // 선택 횟수 (Redis 기반)
 };
 
 export type GetVillagersResponse = {
@@ -108,6 +107,14 @@ function normalizeVillager(item: any): Villager | null {
     console.log(`[Villagers] normalizeVillager - ✅ toneType 추출 성공: "${toneType}"`);
   }
 
+  // ✅ usageCount 추출 (Redis 기반 인기 순위 데이터)
+  // Redis 장애 시 usageCount가 없거나 0일 수 있음
+  const usageCount = 
+    typeof item.usageCount === "number" ? item.usageCount :
+    typeof (item as any).usage_count === "number" ? (item as any).usage_count :
+    typeof (item as any).count === "number" ? (item as any).count :
+    undefined;
+  
   // toneType이 없으면 이미 위에서 null 반환했으므로, 여기서는 항상 toneType이 존재함
   const normalized = {
     id: api.id,
@@ -117,7 +124,12 @@ function normalizeVillager(item: any): Villager | null {
     iconUrl: imageUrl,
     toneExample,
     toneType: toneType, // 백엔드에서 받은 실제 값만 사용 (fallback 없음)
+    usageCount, // 선택 횟수 (Redis 장애 시 undefined 또는 0)
   };
+  
+  if (usageCount !== undefined) {
+    console.log(`[Villagers] normalizeVillager - usageCount 추출: ${usageCount} (villagerId: ${api.id})`);
+  }
 
   console.log(`[Villagers] normalizeVillager - 정규화 완료 (villagerId: ${api.id}, toneType: ${toneType}):`, normalized);
   
@@ -144,9 +156,32 @@ const mockVillagers: Villager[] = [
   // 백엔드 API가 항상 toneType을 포함해야 함
 ];
 
-export async function getVillagers(): Promise<GetVillagersResponse> {
+/**
+ * 주민 목록 조회
+ * @param sort 정렬 방식 ('popular' | undefined)
+ * @param limit 최대 개수 (기본값: undefined, 최대 100)
+ */
+export async function getVillagers(sort?: 'popular', limit?: number): Promise<GetVillagersResponse> {
   try {
-    const response = await apiFetch<unknown>("/villagers", {
+    // ✅ 쿼리 파라미터 구성
+    const params = new URLSearchParams();
+    if (sort === 'popular') {
+      params.append('sort', 'popular');
+    }
+    if (limit !== undefined && limit > 0) {
+      params.append('limit', Math.min(limit, 100).toString()); // 최대 100으로 제한
+    }
+    
+    const queryString = params.toString();
+    const url = queryString ? `/villagers?${queryString}` : "/villagers";
+    
+    console.log("[Villagers] getVillagers - API 호출:", {
+      url,
+      sort,
+      limit,
+    });
+    
+    const response = await apiFetch<unknown>(url, {
       method: "GET",
     });
 

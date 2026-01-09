@@ -6,8 +6,8 @@ type VillagerCardProps = {
   name: string;
   imageUrl: string;
   isPopular: boolean;
-  popularityRank?: number; // 인기 순위 (1, 2, 3 등)
-  popularityCount?: number; // 선택 횟수
+  popularityRank?: number; // 인기 순위 (1, 2, 3 등) - 배열 index 기반
+  usageCount?: number; // 선택 횟수 (Redis 기반, 장애 시 0 또는 undefined)
   exampleSentence: string;
 };
 
@@ -16,7 +16,7 @@ export default function VillagerCard({
   imageUrl,
   isPopular,
   popularityRank,
-  popularityCount,
+  usageCount,
   exampleSentence,
 }: VillagerCardProps) {
   const [imageError, setImageError] = useState(false);
@@ -37,44 +37,42 @@ export default function VillagerCard({
               <span className="text-3xl sm:text-4xl">🐾</span>
             </div>
           )}
-          {/* ✅ 인기 순위 배지 표시 */}
-          {isPopular && popularityRank && popularityRank <= 3 && (
-            <div className="absolute top-2 right-2 flex items-center gap-1">
+          {/* ✅ 인기 순위 배지 표시 (상위 3명만) */}
+          {popularityRank && popularityRank <= 3 && usageCount !== undefined && usageCount > 0 && (
+            <div className="absolute top-2 right-2 flex items-center gap-1 z-20">
               {/* 순위별 스타일 */}
               {popularityRank === 1 && (
                 <div className="bg-gradient-to-br from-yellow-400 to-yellow-600 text-yellow-900 text-[10px] sm:text-xs font-bold px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-full shadow-lg flex items-center gap-1">
                   <span className="text-sm sm:text-base">🥇</span>
                   <span>1위</span>
-                  {popularityCount !== undefined && (
-                    <span className="text-[9px] sm:text-[10px] opacity-75">({popularityCount})</span>
-                  )}
                 </div>
               )}
               {popularityRank === 2 && (
                 <div className="bg-gradient-to-br from-gray-300 to-gray-500 text-gray-900 text-[10px] sm:text-xs font-bold px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-full shadow-lg flex items-center gap-1">
                   <span className="text-sm sm:text-base">🥈</span>
                   <span>2위</span>
-                  {popularityCount !== undefined && (
-                    <span className="text-[9px] sm:text-[10px] opacity-75">({popularityCount})</span>
-                  )}
                 </div>
               )}
               {popularityRank === 3 && (
                 <div className="bg-gradient-to-br from-amber-600 to-amber-800 text-amber-100 text-[10px] sm:text-xs font-bold px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-full shadow-lg flex items-center gap-1">
                   <span className="text-sm sm:text-base">🥉</span>
                   <span>3위</span>
-                  {popularityCount !== undefined && (
-                    <span className="text-[9px] sm:text-[10px] opacity-75">({popularityCount})</span>
-                  )}
                 </div>
               )}
             </div>
           )}
         </div>
-        <div className="px-3 pb-3 pt-2 flex-1 flex items-center justify-center">
-          <h3 className="text-sm sm:text-base md:text-lg font-semibold text-zinc-900 text-center break-words line-clamp-1">
+        <div className="px-3 pb-3 pt-2 flex-1 flex flex-col items-center justify-center">
+          <h3 className="text-sm sm:text-base md:text-lg font-semibold text-zinc-900 text-center break-words line-clamp-1 mb-1">
             {name}
           </h3>
+          {/* ✅ 선택 횟수(usageCount) 카드 하단에 표시 */}
+          {usageCount !== undefined && usageCount > 0 && (
+            <div className="text-[10px] sm:text-xs text-zinc-500 font-medium">
+              선택 {usageCount}회
+            </div>
+          )}
+          {/* ✅ Redis 장애 시 usageCount가 0이거나 undefined인 경우 표시하지 않음 */}
         </div>
       </div>
 

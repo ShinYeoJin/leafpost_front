@@ -6,7 +6,6 @@ import Header from "@/components/common/Header";
 import VillagerCard from "@/components/villagers/VillagerCard";
 import MailCardForm from "@/components/mail/MailCardForm";
 import { getVillagers, type Villager as ApiVillager } from "@/lib/api/villagers";
-import { getPopularityRankings, type PopularityRank } from "@/lib/api/cards";
 import { checkAuth } from "@/lib/api/auth";
 
 export default function MainPage() {
@@ -18,7 +17,6 @@ export default function MainPage() {
   const [selectedVillager, setSelectedVillager] = useState<ApiVillager | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAuthChecked, setIsAuthChecked] = useState(false);
-  const [popularityRankings, setPopularityRankings] = useState<Map<number, PopularityRank>>(new Map());
 
   // ✅ 크로스 도메인 쿠키 문제로 middleware에서 인증 체크 불가능
   // 클라이언트에서 인증 상태 확인
@@ -55,44 +53,38 @@ export default function MainPage() {
         setIsLoading(true);
         setError(null);
         
-        // ✅ 주민 목록과 인기 순위를 병렬로 가져오기
-        const [villagersResponse, popularityResponse] = await Promise.all([
-          getVillagers(),
-          getPopularityRankings(),
-        ]);
+        // ✅ 인기순으로 주민 목록 가져오기 (sort=popular, limit=8)
+        // 백엔드에서 이미 인기순으로 정렬되어 내려오므로 프론트에서 별도 정렬 불필요
+        const response = await getVillagers('popular', 8);
         
-        // ✅ 인기 순위를 Map으로 변환 (villagerId를 키로 사용)
-        const rankingsMap = new Map<number, PopularityRank>();
-        if (popularityResponse.rankings && Array.isArray(popularityResponse.rankings)) {
-          popularityResponse.rankings.forEach((ranking) => {
-            rankingsMap.set(ranking.villagerId, ranking);
-          });
-        }
-        setPopularityRankings(rankingsMap);
+        console.log("[MainPage] fetchVillagers - 인기순 주민 목록 조회 성공:", {
+          villagersCount: response.villagers.length,
+          isValid: response.isValid,
+          top3: response.villagers.slice(0, 3).map(v => ({
+            id: v.id,
+            name: v.name,
+            usageCount: v.usageCount,
+          })),
+        });
         
-        // ✅ 주민 목록에 인기 순위 정보 추가
-        if (Array.isArray(villagersResponse.villagers)) {
-          const villagersWithRanking = villagersResponse.villagers.map((villager) => {
-            const ranking = rankingsMap.get(villager.id);
-            return {
-              ...villager,
-              popularityRank: ranking?.rank,
-              popularityCount: ranking?.count,
-            };
-          });
-          
-          setVillagers(villagersWithRanking);
-          setIsValidResponse(villagersResponse.isValid);
+        // ✅ 배열 검증 및 상태 업데이트
+        if (Array.isArray(response.villagers)) {
+          setVillagers(response.villagers);
+          setIsValidResponse(response.isValid);
         } else {
           // 이중 방어: 만약 villagers가 배열이 아닌 경우
+          console.warn("[MainPage] fetchVillagers - villagers가 배열이 아님, 빈 배열로 처리");
           setVillagers([]);
           setIsValidResponse(false);
         }
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : "주민 목록을 불러오는데 실패했습니다.";
+        console.error("[MainPage] fetchVillagers - ❌ 주민 목록 조회 실패:", err);
         setError(errorMessage);
         setIsValidResponse(false);
+        // ✅ Redis 장애 등으로 인한 에러 시 빈 배열로 처리 (fallback)
+        setVillagers([]);
       } finally {
         setIsLoading(false);
       }
@@ -225,9 +217,9 @@ export default function MainPage() {
               <VillagerCard
                 name={villager.name}
                 imageUrl={villager.imageUrl}
-                isPopular={villager.popularityRank !== undefined && villager.popularityRank <= 3}
-                popularityRank={villager.popularityRank}
-                popularityCount={villager.popularityCount}
+                isPopular={villager.usageCount !== undefined && villager.usageCount > 0}
+                popularityRank={villagers.indexOf(villager) + 1} // ✅ 인기순 배열의 index 기반 순위 (1, 2, 3)
+                usageCount={villager.usageCount}
                 exampleSentence={villager.toneExample}
               />
             </div>
