@@ -55,31 +55,42 @@ export default function LoginPage() {
       
       // ✅ iOS 환경에서는 쿠키 설정 대기 시간 추가
       if (isIOS) {
-        console.log("[LoginPage] iOS 환경 - 쿠키 설정 대기 중... (2초)");
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        console.log("[LoginPage] iOS 환경 - 쿠키 설정 대기 중... (3초)");
+        await new Promise(resolve => setTimeout(resolve, 3000)); // iOS는 더 긴 대기 시간
         console.log("[LoginPage] iOS 환경 - 쿠키 설정 대기 완료");
       }
       
       const { checkAuth } = await import("@/lib/api/auth");
-      let authResult;
+      let authResult: { authenticated: boolean; user?: any } | undefined;
       let retryCount = 0;
-      const maxRetries = isIOS ? 2 : 1; // iOS는 재시도 1회 추가
+      const maxRetries = isIOS ? 3 : 1; // iOS는 재시도 2회 추가 (총 3회)
       
       // ✅ iOS 환경에서는 재시도 로직 추가
       while (retryCount < maxRetries) {
         try {
+          console.log(`[LoginPage] 인증 확인 시도 ${retryCount + 1}/${maxRetries}`);
           authResult = await checkAuth();
-          if (authResult.authenticated) {
+          
+          if (authResult && authResult.authenticated) {
+            console.log(`[LoginPage] ✅ 인증 확인 성공 (시도 ${retryCount + 1}/${maxRetries})`);
             break; // 인증 성공 시 루프 종료
+          } else {
+            console.warn(`[LoginPage] 인증 확인 실패 (시도 ${retryCount + 1}/${maxRetries}): authenticated=false`);
           }
         } catch (err) {
-          console.error(`[LoginPage] 인증 확인 실패 (시도 ${retryCount + 1}/${maxRetries}):`, err);
+          console.error(`[LoginPage] 인증 확인 에러 (시도 ${retryCount + 1}/${maxRetries}):`, err);
+          
+          // ✅ 401 에러인 경우 쿠키 문제로 간주
+          if (err instanceof Error && err.message.includes("401")) {
+            console.error("[LoginPage] 401 에러 - 쿠키가 설정되지 않았거나 만료됨");
+          }
         }
         
         retryCount++;
-        if (retryCount < maxRetries && isIOS) {
-          console.log(`[LoginPage] iOS 환경 - 재시도 대기 중... (${retryCount + 1}초)`);
-          await new Promise(resolve => setTimeout(resolve, (retryCount + 1) * 1000));
+        if (retryCount < maxRetries) {
+          const waitTime = isIOS ? (retryCount + 1) * 1000 : 1000; // iOS는 점진적 대기 시간 증가
+          console.log(`[LoginPage] 재시도 대기 중... (${waitTime}ms)`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
         }
       }
       
@@ -92,6 +103,12 @@ export default function LoginPage() {
         return; // ✅ 리다이렉트 후 즉시 종료
       } else {
         console.error("[LoginPage] ❌ 인증 확인 실패 - 쿠키가 설정되지 않았거나 만료됨");
+        console.error("[LoginPage] 최종 인증 결과:", {
+          authResult,
+          retryCount,
+          maxRetries,
+        });
+        
         if (isMobile) {
           console.error("[LoginPage] 모바일 환경 - 추가 확인 필요:");
           console.error("[LoginPage] - HTTPS 환경:", isHTTPS);
@@ -103,6 +120,7 @@ export default function LoginPage() {
           console.error("[LoginPage] - 사용자가 사이트를 직접 방문한 경우에만 쿠키가 설정됨");
           console.error("[LoginPage] - 쿠키 설정 후 다음 요청에서 쿠키 포함 여부 확인 필요");
           console.error("[LoginPage] - 재시도 후에도 실패한 경우, 백엔드 쿠키 설정 확인 필요");
+          console.error("[LoginPage] - iOS Safari 설정에서 쿠키 허용 여부 확인 필요");
         }
         setError("로그인에 실패했습니다. 다시 시도해주세요.");
       }

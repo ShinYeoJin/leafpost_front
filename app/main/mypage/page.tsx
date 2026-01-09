@@ -167,43 +167,52 @@ export default function MyPage() {
       const profileImageChanged = profileImage !== currentProfileImage;
       
       if (profileImageChanged) {
-        console.log("[MyPage] handleSaveProfile - 프로필 이미지 변경 감지, PATCH /users/profile 호출");
+        console.log("[MyPage] handleSaveProfile - 프로필 이미지 변경 감지");
         console.log("[MyPage] handleSaveProfile - 프로필 이미지 정보:", {
           current: currentProfileImage ? "있음" : "없음",
           new: profileImage ? "있음" : "없음",
           isBase64: typeof profileImage === "string" && profileImage.startsWith("data:"),
         });
         
-        let imageToSend: File | string | null = profileImage;
-        
-        // base64 문자열을 File로 변환 (백엔드가 File을 기대하는 경우)
-        if (typeof profileImage === "string" && profileImage.startsWith("data:image")) {
-          try {
-            // data:image/png;base64,xxxxx 형식에서 추출
-            const base64Data = profileImage.split(",")[1];
-            const mimeType = profileImage.match(/data:image\/(\w+);base64/)?.[1] || "png";
-            const byteCharacters = atob(base64Data);
-            const byteNumbers = new Array(byteCharacters.length);
-            for (let i = 0; i < byteCharacters.length; i++) {
-              byteNumbers[i] = byteCharacters.charCodeAt(i);
+        // ✅ null인 경우 프로필 이미지 제거 요청을 보내지 않음
+        // 백엔드가 "property profileImage should not exist" 에러를 반환하므로
+        if (profileImage === null) {
+          console.log("[MyPage] handleSaveProfile - profileImage가 null이므로 API 호출 생략");
+          console.log("[MyPage] handleSaveProfile - 참고: 프로필 이미지 제거는 별도 API가 필요할 수 있습니다");
+        } else {
+          console.log("[MyPage] handleSaveProfile - PATCH /users/profile 호출");
+          
+          let imageToSend: File | string = profileImage;
+          
+          // base64 문자열을 File로 변환 (백엔드가 File을 기대하는 경우)
+          if (typeof profileImage === "string" && profileImage.startsWith("data:image")) {
+            try {
+              // data:image/png;base64,xxxxx 형식에서 추출
+              const base64Data = profileImage.split(",")[1];
+              const mimeType = profileImage.match(/data:image\/(\w+);base64/)?.[1] || "png";
+              const byteCharacters = atob(base64Data);
+              const byteNumbers = new Array(byteCharacters.length);
+              for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+              }
+              const byteArray = new Uint8Array(byteNumbers);
+              const blob = new Blob([byteArray], { type: `image/${mimeType}` });
+              imageToSend = new File([blob], `profile.${mimeType}`, { type: `image/${mimeType}` });
+              console.log("[MyPage] handleSaveProfile - base64를 File로 변환 완료:", {
+                fileName: imageToSend.name,
+                fileSize: imageToSend.size,
+                fileType: imageToSend.type,
+              });
+            } catch (err) {
+              console.error("[MyPage] handleSaveProfile - base64 변환 실패, 문자열로 전송:", err);
+              // 변환 실패 시 문자열로 전송
+              imageToSend = profileImage;
             }
-            const byteArray = new Uint8Array(byteNumbers);
-            const blob = new Blob([byteArray], { type: `image/${mimeType}` });
-            imageToSend = new File([blob], `profile.${mimeType}`, { type: `image/${mimeType}` });
-            console.log("[MyPage] handleSaveProfile - base64를 File로 변환 완료:", {
-              fileName: imageToSend.name,
-              fileSize: imageToSend.size,
-              fileType: imageToSend.type,
-            });
-          } catch (err) {
-            console.error("[MyPage] handleSaveProfile - base64 변환 실패, 문자열로 전송:", err);
-            // 변환 실패 시 문자열로 전송
-            imageToSend = profileImage;
           }
+          
+          await updateProfile(imageToSend);
+          console.log("[MyPage] handleSaveProfile - ✅ 프로필 이미지 업데이트 성공");
         }
-        
-        await updateProfile(imageToSend);
-        console.log("[MyPage] handleSaveProfile - ✅ 프로필 이미지 업데이트 성공");
       } else {
         console.log("[MyPage] handleSaveProfile - 프로필 이미지 변경 없음, API 호출 생략");
       }
@@ -354,28 +363,80 @@ export default function MyPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="relative w-20 h-20 rounded-full overflow-hidden bg-sky-100 border-4 border-sky-200 flex-shrink-0">
-                      {userInfo.profileImage ? (
-                        <Image
-                          src={userInfo.profileImage}
-                          alt={userInfo.nickname}
-                          fill
-                          className="object-cover"
-                          onError={(e) => {
-                            console.error("[MyPage] 프로필 이미지 로드 실패:", {
-                              src: userInfo.profileImage,
-                              error: e,
-                            });
-                            // 이미지 로드 실패 시 기본 아이콘 표시
-                            e.currentTarget.style.display = 'none';
-                          }}
-                          onLoad={() => {
-                            console.log("[MyPage] 프로필 이미지 로드 성공:", userInfo.profileImage);
-                          }}
-                        />
+                      {userInfo.profileImage && userInfo.profileImage.trim() ? (
+                        <>
+                          {console.log("[MyPage] 프로필 이미지 렌더링 시도:", {
+                            src: userInfo.profileImage,
+                            srcLength: userInfo.profileImage.length,
+                            srcType: typeof userInfo.profileImage,
+                            srcPreview: userInfo.profileImage.substring(0, 50),
+                            isDataUrl: userInfo.profileImage.startsWith("data:image"),
+                            isHttpUrl: userInfo.profileImage.startsWith("http"),
+                          })}
+                          {/* ✅ Next.js Image 컴포넌트는 base64 data URL을 직접 지원하지 않을 수 있음 */}
+                          {/* base64 data URL의 경우 일반 img 태그 사용 */}
+                          {userInfo.profileImage.startsWith("data:image") ? (
+                            // base64 data URL인 경우 일반 img 태그 사용
+                            <img
+                              src={userInfo.profileImage}
+                              alt={userInfo.nickname}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                console.error("[MyPage] 프로필 이미지 로드 실패 (img 태그):", {
+                                  src: userInfo.profileImage,
+                                  error: e,
+                                });
+                                // 이미지 로드 실패 시 기본 아이콘 표시
+                                const target = e.currentTarget;
+                                target.style.display = 'none';
+                                const parent = target.parentElement;
+                                if (parent && !parent.querySelector('.fallback-icon')) {
+                                  const fallback = document.createElement('div');
+                                  fallback.className = 'w-full h-full flex items-center justify-center text-3xl bg-gradient-to-br from-sky-200 to-yellow-200 fallback-icon';
+                                  fallback.textContent = '👤';
+                                  parent.appendChild(fallback);
+                                }
+                              }}
+                              onLoad={() => {
+                                console.log("[MyPage] ✅ 프로필 이미지 로드 성공 (img 태그):", {
+                                  src: userInfo.profileImage,
+                                  srcLength: userInfo.profileImage?.length,
+                                });
+                              }}
+                            />
+                          ) : (
+                            // HTTP URL인 경우 Next.js Image 컴포넌트 사용
+                            <Image
+                              src={userInfo.profileImage}
+                              alt={userInfo.nickname}
+                              fill
+                              className="object-cover"
+                              unoptimized={userInfo.profileImage.startsWith("http")}
+                              onError={(e) => {
+                                console.error("[MyPage] 프로필 이미지 로드 실패 (Image 컴포넌트):", {
+                                  src: userInfo.profileImage,
+                                  error: e,
+                                });
+                              }}
+                              onLoad={() => {
+                                console.log("[MyPage] ✅ 프로필 이미지 로드 성공 (Image 컴포넌트):", {
+                                  src: userInfo.profileImage,
+                                });
+                              }}
+                            />
+                          )}
+                        </>
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-3xl bg-gradient-to-br from-sky-200 to-yellow-200">
-                          👤
-                        </div>
+                        <>
+                          {console.log("[MyPage] 프로필 이미지 없음 - 기본 아이콘 표시:", {
+                            profileImage: userInfo.profileImage,
+                            profileImageType: typeof userInfo.profileImage,
+                            isEmpty: userInfo.profileImage && !userInfo.profileImage.trim(),
+                          })}
+                          <div className="w-full h-full flex items-center justify-center text-3xl bg-gradient-to-br from-sky-200 to-yellow-200">
+                            👤
+                          </div>
+                        </>
                       )}
                     </div>
                     <div>

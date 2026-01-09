@@ -154,6 +154,11 @@ export function useProfile() {
   /**
    * 프로필 이미지 업데이트
    * 백엔드 라우트: PATCH /api/users/profile
+   * 
+   * 백엔드 DTO 요구사항:
+   * - profileImage가 null이면 필드를 보내지 않아야 함
+   * - File 객체는 FormData로 전송
+   * - base64 문자열은 JSON으로 전송
    */
   const updateProfile = async (profileImage: File | string | null) => {
     setIsLoading(true);
@@ -166,6 +171,21 @@ export function useProfile() {
         endpoint: "/users/profile",
       });
       
+      // ✅ null, undefined, 빈 문자열인 경우 프로필 이미지 제거 요청을 보내지 않음
+      // 백엔드가 "property profileImage should not exist" 에러를 반환하므로
+      if (!profileImage || (typeof profileImage === "string" && !profileImage.trim())) {
+        console.log("[Profile] updateProfile - profileImage가 null/undefined/빈 문자열이므로 API 호출 생략:", {
+          profileImage,
+          type: typeof profileImage,
+          isEmpty: typeof profileImage === "string" && !profileImage.trim(),
+        });
+        console.log("[Profile] updateProfile - 참고: 프로필 이미지 제거는 별도 API가 필요할 수 있습니다");
+        setIsLoading(false);
+        setError(null);
+        // null인 경우 빈 응답 반환 (또는 제거 API가 있다면 호출)
+        return { profileImage: undefined, profileUrl: undefined };
+      }
+      
       let body: FormData | string;
       let headers: Record<string, string> = {};
       
@@ -174,15 +194,40 @@ export function useProfile() {
         body = new FormData();
         body.append("profileImage", profileImage);
         // FormData는 Content-Type을 브라우저가 자동으로 설정하므로 헤더에 포함하지 않음
-      } else if (typeof profileImage === "string") {
+        console.log("[Profile] updateProfile - File 객체를 FormData로 전송:", {
+          fileName: profileImage.name,
+          fileSize: profileImage.size,
+          fileType: profileImage.type,
+        });
+      } else if (typeof profileImage === "string" && profileImage.trim()) {
         // base64 문자열인 경우 JSON으로 전송
-        body = JSON.stringify({ profileImage });
+        // ✅ base64 문자열이 유효한지 확인
+        if (!profileImage.startsWith("data:image")) {
+          console.warn("[Profile] updateProfile - base64 문자열이 data:image로 시작하지 않음, 그대로 전송");
+        }
+        body = JSON.stringify({ profileImage: profileImage.trim() });
         headers["Content-Type"] = "application/json";
+        console.log("[Profile] updateProfile - base64 문자열을 JSON으로 전송:", {
+          length: profileImage.length,
+          preview: profileImage.substring(0, 50),
+          isDataUrl: profileImage.startsWith("data:image"),
+        });
       } else {
-        // null인 경우 프로필 이미지 제거
-        body = JSON.stringify({ profileImage: null });
-        headers["Content-Type"] = "application/json";
+        // 예상치 못한 타입인 경우 처리하지 않음
+        console.error("[Profile] updateProfile - 예상치 못한 profileImage 타입:", {
+          profileImage,
+          type: typeof profileImage,
+          isFile: profileImage instanceof File,
+        });
+        setIsLoading(false);
+        setError(new Error("Invalid profile image type"));
+        throw new Error("Invalid profile image type");
       }
+      
+      console.log("[Profile] updateProfile - 요청 body 타입:", {
+        bodyType: body instanceof FormData ? "FormData" : typeof body,
+        bodyPreview: body instanceof FormData ? "FormData" : (typeof body === "string" ? body.substring(0, 100) : body),
+      });
       
       const response = await apiFetch<UpdateProfileResponse>(
         "/users/profile",
