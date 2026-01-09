@@ -10,12 +10,33 @@ export function middleware(request: NextRequest) {
   const cookieNames = allCookies.map(c => c.name);
   const refreshToken = request.cookies.get("refreshToken")?.value;
 
-  // ✅ 보호된 라우트 체크 - 쿠키 기반 인증 확인
+  // ✅ 로그인 상태 확인 (accessToken 쿠키 존재 여부)
+  const isAuthenticated = !!accessToken && accessToken.length > 0;
+
+  // ✅ 1. 로그인 페이지 접근 시 이미 로그인되어 있으면 /main으로 리다이렉트
+  // 이 로직을 먼저 체크하여 로그인 상태에서 /login 접근을 차단
+  if ((pathname === "/login" || pathname === "/signup" || pathname === "/auth/login" || pathname === "/auth/signup")) {
+    if (isAuthenticated) {
+      console.log("[Middleware] ✅ 이미 로그인됨 - /login 접근 차단, /main으로 리다이렉트", {
+        pathname,
+        hasAccessToken: true,
+        accessTokenLength: accessToken.length,
+      });
+      const mainUrl = new URL("/main", request.url);
+      return NextResponse.redirect(mainUrl);
+    } else {
+      // 로그인되지 않은 상태에서 로그인 페이지 접근은 허용
+      console.log("[Middleware] 로그인 페이지 접근 허용 (비로그인 상태)");
+      return NextResponse.next();
+    }
+  }
+
+  // ✅ 2. 보호된 라우트 체크 - 쿠키 기반 인증 확인
   if (pathname.startsWith("/main") || pathname.startsWith("/villagers")) {
     // 디버깅: 쿠키 상태 로깅 (항상 로깅하여 문제 파악)
     console.log("[Middleware] 보호된 라우트 접근 시도:", {
       pathname,
-      hasAccessToken: !!accessToken,
+      hasAccessToken: isAuthenticated,
       accessTokenLength: accessToken?.length || 0,
       hasRefreshToken: !!refreshToken,
       allCookieNames: cookieNames,
@@ -25,7 +46,7 @@ export function middleware(request: NextRequest) {
     });
     
     // ✅ accessToken 쿠키가 없으면 /login으로 리다이렉트
-    if (!accessToken) {
+    if (!isAuthenticated) {
       console.log("[Middleware] ❌ accessToken 쿠키 없음 - /login으로 리다이렉트");
       console.log("[Middleware] 쿠키 정보:", {
         allCookies: cookieNames,
@@ -41,16 +62,6 @@ export function middleware(request: NextRequest) {
       hasAccessToken: true,
       accessTokenLength: accessToken.length,
     });
-  }
-
-  // /login, /signup 접근 시 이미 로그인되어 있으면 /main으로 리다이렉트
-  if ((pathname === "/login" || pathname === "/signup" || pathname === "/auth/login" || pathname === "/auth/signup") && accessToken) {
-    console.log("[Middleware] 이미 로그인됨 - /main으로 리다이렉트", {
-      pathname,
-      hasAccessToken: true,
-    });
-    const mainUrl = new URL("/main", request.url);
-    return NextResponse.redirect(mainUrl);
   }
 
   return NextResponse.next();

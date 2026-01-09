@@ -34,11 +34,11 @@ export default function LoginForm({ onSuccess, onError }: LoginFormProps) {
       const authResult = await checkAuth();
       
       if (authResult.authenticated) {
-        console.log("[LoginForm] ✅ 인증 확인 성공 - /main으로 리다이렉트");
-        console.log("[LoginForm] window.location.href = '/main' 실행");
-        // ✅ 완전한 페이지 리로드를 통해 middleware가 새로 실행되도록 함
-        // 리다이렉트 후 즉시 return하여 이후 코드 실행 방지
-        window.location.href = "/main";
+        console.log("[LoginForm] ✅ 인증 확인 성공 - middleware가 자동으로 /main으로 리다이렉트합니다");
+        // ✅ middleware가 로그인 상태를 감지하여 자동으로 /main으로 리다이렉트하도록
+        // 페이지를 리로드하여 middleware가 새로 실행되도록 함
+        console.log("[LoginForm] 페이지 리로드하여 middleware 실행");
+        window.location.reload();
         return; // ✅ 리다이렉트 후 즉시 종료
       } else {
         console.error("[LoginForm] ❌ 인증 확인 실패 - 쿠키가 설정되지 않았거나 만료됨");

@@ -31,11 +31,13 @@ export default function LoginPage() {
       const authResult = await checkAuth();
       
       if (authResult.authenticated) {
-        console.log("[LoginPage] ✅ 인증 확인 성공 - /main으로 리다이렉트");
-        console.log("[LoginPage] window.location.href = '/main' 실행");
-        // ✅ 완전한 페이지 리로드를 통해 middleware가 새로 실행되도록 함
-        // 리다이렉트 후 즉시 return하여 이후 코드 실행 방지
-        window.location.href = "/main";
+        console.log("[LoginPage] ✅ 인증 확인 성공 - middleware가 자동으로 /main으로 리다이렉트합니다");
+        // ✅ middleware가 로그인 상태를 감지하여 자동으로 /main으로 리다이렉트하도록
+        // 페이지를 리로드하여 middleware가 새로 실행되도록 함
+        // window.location.href 대신 window.location.reload()를 사용하여
+        // 현재 페이지(/login)를 리로드하면 middleware가 로그인 상태를 확인하고 /main으로 리다이렉트
+        console.log("[LoginPage] 페이지 리로드하여 middleware 실행");
+        window.location.reload();
         return; // ✅ 리다이렉트 후 즉시 종료
       } else {
         console.error("[LoginPage] ❌ 인증 확인 실패 - 쿠키가 설정되지 않았거나 만료됨");
