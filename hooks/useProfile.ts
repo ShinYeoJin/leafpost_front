@@ -37,19 +37,45 @@ type GetUserInfoResponse = {
 /**
  * 현재 사용자 정보 가져오기
  * 백엔드 라우트: GET /api/users/me
+ * 
+ * 백엔드 응답 구조:
+ * - 직접 응답: { email, nickname, profileImage, ... }
+ * - 인터셉터 래핑: { data: { email, nickname, profileImage, ... } }
  */
 export async function getUserInfo(): Promise<GetUserInfoResponse> {
   try {
-    const response = await apiFetch<GetUserInfoResponse>("/users/me", {
+    const response = await apiFetch<any>("/users/me", {
       method: "GET",
     });
     
     console.log("[Profile] getUserInfo - ✅ 사용자 정보 조회 성공:", {
       status: response.status,
-      data: response.data,
+      rawData: response.data,
+      dataType: typeof response.data,
+      hasDataProperty: response.data && typeof response.data === 'object' && 'data' in response.data,
     });
     
-    return response.data;
+    // ✅ 백엔드 인터셉터가 { data: {...} } 형태로 래핑하는 경우 처리
+    let userData: GetUserInfoResponse;
+    if (response.data && typeof response.data === 'object' && 'data' in response.data) {
+      // 인터셉터 래핑된 경우: { data: { email, nickname, ... } }
+      console.log("[Profile] getUserInfo - 인터셉터 래핑된 응답 감지, response.data.data 사용");
+      userData = response.data.data;
+    } else {
+      // 직접 응답: { email, nickname, ... }
+      console.log("[Profile] getUserInfo - 직접 응답, response.data 사용");
+      userData = response.data;
+    }
+    
+    console.log("[Profile] getUserInfo - 파싱된 사용자 정보:", {
+      email: userData?.email,
+      nickname: userData?.nickname,
+      profileImage: userData?.profileImage,
+      profileUrl: userData?.profileUrl,
+      전체데이터: userData,
+    });
+    
+    return userData;
   } catch (error) {
     console.error("[Profile] getUserInfo - ❌ 사용자 정보 조회 실패:", error);
     throw error;

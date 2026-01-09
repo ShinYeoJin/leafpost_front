@@ -130,21 +130,35 @@ export async function checkAuth(): Promise<{ authenticated: boolean; user?: any 
         status: response.status,
         hasData: !!response.data,
         endpoint: "/users/me",
-        responseData: response.data,
+        rawData: response.data,
+        dataType: typeof response.data,
+        hasDataProperty: response.data && typeof response.data === 'object' && 'data' in response.data,
       });
+      
+      // ✅ 백엔드 인터셉터가 { data: {...} } 형태로 래핑하는 경우 처리
+      let userData: any;
+      if (response.data && typeof response.data === 'object' && 'data' in response.data) {
+        // 인터셉터 래핑된 경우: { data: { email, nickname, ... } }
+        console.log("[Auth] checkAuth - 인터셉터 래핑된 응답 감지, response.data.data 사용");
+        userData = response.data.data;
+      } else {
+        // 직접 응답: { email, nickname, ... }
+        console.log("[Auth] checkAuth - 직접 응답, response.data 사용");
+        userData = response.data;
+      }
       
       // ✅ 재로그인 시 사용자 정보 확인을 위한 상세 로그
       console.log("[Auth] checkAuth - /users/me 응답 상세:", {
-        email: response.data?.email,
-        nickname: response.data?.nickname,
-        profileImage: response.data?.profileImage,
-        profileUrl: response.data?.profileUrl,
-        전체응답: JSON.stringify(response.data, null, 2),
+        email: userData?.email,
+        nickname: userData?.nickname,
+        profileImage: userData?.profileImage,
+        profileUrl: userData?.profileUrl,
+        전체응답: JSON.stringify(userData, null, 2),
       });
       
       return {
         authenticated: true,
-        user: response.data,
+        user: userData,
       };
   } catch (error) {
     // ✅ 401만 인증 실패로 처리, 404는 경로 문제이므로 별도 처리

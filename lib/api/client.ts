@@ -55,12 +55,16 @@ export async function apiFetch<T = unknown>(
     
     // 모바일 환경 디버깅을 위한 로그 (로그인 API만)
     if (path.includes("/auth/login")) {
+      const isMobile = typeof window !== "undefined" && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       console.log("[API] apiFetch - 로그인 요청:", {
         url: fullUrl,
         method: fetchConfig.method || "GET",
         credentials: "include",
         hasBody: !!fetchConfig.body,
         headers: requestHeaders,
+        isMobile,
+        userAgent: typeof window !== "undefined" ? navigator.userAgent?.substring(0, 100) : "N/A",
+        isHTTPS: typeof window !== "undefined" ? window.location.protocol === "https:" : "N/A",
       });
     }
     
@@ -75,14 +79,27 @@ export async function apiFetch<T = unknown>(
 
     // 로그인 API 응답 확인 (디버깅용)
     if (path.includes("/auth/login")) {
+      const isMobile = typeof window !== "undefined" && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
       // ⚠️ 중요: Set-Cookie 헤더는 브라우저 보안 정책으로 인해 JavaScript에서 읽을 수 없습니다.
       // response.headers.get("set-cookie")는 항상 null을 반환합니다. 이는 정상입니다.
       // 쿠키는 백엔드에서 Set-Cookie 헤더로 설정되며, 브라우저가 자동으로 저장합니다.
       // httpOnly 쿠키는 document.cookie에서도 보이지 않지만, 브라우저는 자동으로 포함합니다.
       
+      // ✅ Set-Cookie 헤더 확인 시도 (모바일 디버깅용)
+      const setCookieHeader = response.headers.get("set-cookie");
+      const allHeaders: Record<string, string> = {};
+      response.headers.forEach((value, key) => {
+        allHeaders[key] = value;
+      });
+      
       console.log("[API] apiFetch - 로그인 응답:", {
         status: response.status,
         statusText: response.statusText,
+        isMobile,
+        isHTTPS: typeof window !== "undefined" ? window.location.protocol === "https:" : "N/A",
+        setCookieHeader: setCookieHeader || "null (정상 - 브라우저 보안 정책)",
+        allHeaders: Object.keys(allHeaders),
         note: "Set-Cookie 헤더는 브라우저 보안 정책으로 JavaScript에서 읽을 수 없습니다 (정상 동작)",
       });
       
@@ -90,6 +107,18 @@ export async function apiFetch<T = unknown>(
       if (response.ok) {
         console.log("[API] ✅ 로그인 성공 (201) - 쿠키는 백엔드에서 설정되었습니다");
         console.log("[API] 참고: httpOnly 쿠키는 document.cookie에서 보이지 않지만, 브라우저는 자동으로 저장하고 포함합니다");
+        if (isMobile) {
+          console.log("[API] 모바일 환경 - 쿠키 설정 확인:");
+          console.log("[API] - HTTPS 환경:", typeof window !== "undefined" ? window.location.protocol === "https:" : "N/A");
+          console.log("[API] - credentials: 'include' 설정됨");
+          console.log("[API] - SameSite=None, Secure=true 쿠키는 HTTPS 환경에서만 작동합니다");
+        }
+      } else {
+        console.error("[API] ❌ 로그인 실패:", {
+          status: response.status,
+          statusText: response.statusText,
+          isMobile,
+        });
       }
     }
 

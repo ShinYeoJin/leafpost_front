@@ -18,6 +18,17 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
+      // ✅ 모바일 환경 확인
+      const isMobile = typeof window !== "undefined" && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const isHTTPS = typeof window !== "undefined" ? window.location.protocol === "https:" : false;
+      
+      console.log("[LoginPage] 로그인 시도:", {
+        email,
+        isMobile,
+        isHTTPS,
+        userAgent: typeof window !== "undefined" ? navigator.userAgent?.substring(0, 100) : "N/A",
+      });
+      
       const response = await login(email, password);
       // 백엔드에서 httpOnly 쿠키로 토큰을 설정하므로 클라이언트에서 저장할 필요 없음
       // 사용자 이메일만 localStorage에 저장 (UI 표시용)
@@ -25,9 +36,9 @@ export default function LoginPage() {
       
       console.log("[LoginPage] ✅ 로그인 API 성공");
       
-      // ✅ 실제 인증 상태 확인: /auth/me API 호출
+      // ✅ 실제 인증 상태 확인: /users/me API 호출
       // 쿠키 반영 대기 대신 실제 API로 인증 상태 확인
-      console.log("[LoginPage] 인증 상태 확인 중... (/auth/me 호출)");
+      console.log("[LoginPage] 인증 상태 확인 중... (/users/me 호출)");
       const { checkAuth } = await import("@/lib/api/auth");
       const authResult = await checkAuth();
       
@@ -40,6 +51,11 @@ export default function LoginPage() {
         return; // ✅ 리다이렉트 후 즉시 종료
       } else {
         console.error("[LoginPage] ❌ 인증 확인 실패 - 쿠키가 설정되지 않았거나 만료됨");
+        if (isMobile) {
+          console.error("[LoginPage] 모바일 환경 - 추가 확인 필요:");
+          console.error("[LoginPage] - HTTPS 환경:", isHTTPS);
+          console.error("[LoginPage] - SameSite=None, Secure=true 쿠키는 HTTPS 환경에서만 작동합니다");
+        }
         setError("로그인에 실패했습니다. 다시 시도해주세요.");
       }
     } catch (err) {
@@ -48,9 +64,22 @@ export default function LoginPage() {
       setError(errorMessage);
       
       // 모바일 환경에서 쿠키 관련 에러인 경우 추가 안내
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      if (isMobile && (errorMessage.includes("401") || errorMessage.includes("인증"))) {
+      const isMobile = typeof window !== "undefined" && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const isHTTPS = typeof window !== "undefined" ? window.location.protocol === "https:" : false;
+      
+      console.error("[LoginPage] 로그인 에러:", {
+        error: errorMessage,
+        isMobile,
+        isHTTPS,
+        errorType: err instanceof Error ? err.constructor.name : typeof err,
+      });
+      
+      if (isMobile && (errorMessage.includes("401") || errorMessage.includes("인증") || errorMessage.includes("load failed"))) {
         console.warn("[Login] 모바일 환경에서 인증 실패 - 쿠키 설정 문제일 수 있습니다.");
+        console.warn("[Login] 확인 사항:");
+        console.warn("[Login] - HTTPS 환경:", isHTTPS);
+        console.warn("[Login] - credentials: 'include' 설정 확인");
+        console.warn("[Login] - SameSite=None, Secure=true 쿠키는 HTTPS 환경에서만 작동합니다");
       }
     } finally {
       setIsLoading(false);
