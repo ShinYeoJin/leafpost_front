@@ -86,29 +86,18 @@ export async function login(email: string, password: string): Promise<LoginRespo
     
     // ✅ 쿠키 기반 인증이므로 response body에 토큰이 없어도 성공으로 처리
     // 백엔드가 쿠키로 토큰을 설정하므로 response.data는 선택적
-    console.log("[Auth] login - 응답 성공:", {
-      status: response.status,
-      statusText: response.statusText,
-      hasData: !!response.data,
-      data: response.data,
-    });
+    console.log("[Auth] login - ✅ 로그인 API 성공 (201)");
+    console.log("[Auth] login - 참고: httpOnly 쿠키는 document.cookie에서 보이지 않습니다 (정상 동작)");
+    console.log("[Auth] login - 쿠키는 백엔드에서 설정되었으며, 브라우저가 자동으로 저장합니다.");
     
-    // ⚠️ 중요: httpOnly 쿠키는 document.cookie에서 보이지 않습니다. 이는 정상입니다.
-    // 쿠키는 백엔드에서 Set-Cookie 헤더로 설정되며, 브라우저가 자동으로 저장합니다.
-    // 브라우저는 이후 모든 요청에 자동으로 쿠키를 포함합니다.
+    // ✅ 쿠키가 설정되기를 기다림 (sameSite: 'none' 쿠키는 비동기적으로 설정될 수 있음)
+    // 브라우저가 Set-Cookie 헤더를 처리하는 시간을 확보
+    // 크로스 도메인 쿠키는 더 많은 시간이 필요할 수 있음
+    // 크로스 도메인 쿠키는 브라우저가 처리하는 데 시간이 걸릴 수 있으므로 충분한 대기 시간 필요
     if (typeof document !== "undefined") {
-      console.log("[Auth] login - ✅ 로그인 API 성공 (201)");
-      console.log("[Auth] login - 참고: httpOnly 쿠키는 document.cookie에서 보이지 않습니다 (정상 동작)");
-      console.log("[Auth] login - 쿠키는 백엔드에서 설정되었으며, 브라우저가 자동으로 저장합니다.");
-      
-      // ✅ 쿠키가 설정되기를 기다림 (sameSite: 'none' 쿠키는 비동기적으로 설정될 수 있음)
-      // 브라우저가 Set-Cookie 헤더를 처리하는 시간을 확보
-      // 크로스 도메인 쿠키는 더 많은 시간이 필요할 수 있음
-      // 크로스 도메인 쿠키는 브라우저가 처리하는 데 시간이 걸릴 수 있으므로 충분한 대기 시간 필요
       console.log("[Auth] login - 쿠키 반영 대기 중... (크로스 도메인 쿠키는 시간이 필요할 수 있음)");
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      console.log("[Auth] login - ✅ 쿠키 설정 대기 완료 - /main으로 리다이렉트 준비");
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log("[Auth] login - ✅ 쿠키 설정 대기 완료");
     }
     
     // ✅ response.data가 없어도 쿠키 기반 인증이므로 성공으로 처리
