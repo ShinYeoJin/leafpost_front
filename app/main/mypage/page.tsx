@@ -7,6 +7,7 @@ import ProfileEdit from "@/components/user/ProfileEdit";
 import { useEmails } from "@/hooks/useEmails";
 import type { Email, EmailStatus } from "@/lib/api/emails";
 import { getVillagers, type Villager } from "@/lib/api/villagers";
+import { getUserInfo, useProfile } from "@/hooks/useProfile";
 import Image from "next/image";
 
 export default function MyPage() {
@@ -19,18 +20,52 @@ export default function MyPage() {
   } | null>(null);
   const [villagers, setVillagers] = useState<Villager[]>([]);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const { updateNickname, updateProfile, isLoading: isProfileLoading } = useProfile();
 
-  const loadUserInfo = () => {
-    if (typeof window !== "undefined") {
-      const email = localStorage.getItem("userEmail") || "";
-      const nickname = localStorage.getItem("userNickname") || email.split("@")[0] || "사용자";
-      const profileImage = localStorage.getItem("userProfileImage");
+  // ✅ 백엔드 API로 사용자 정보 가져오기
+  const loadUserInfo = async () => {
+    try {
+      console.log("[MyPage] loadUserInfo - /users/me API 호출 시작");
+      const userData = await getUserInfo();
       
-      setUserInfo({
-        email,
-        nickname,
-        profileImage,
+      console.log("[MyPage] loadUserInfo - ✅ 사용자 정보 조회 성공:", {
+        email: userData.email,
+        nickname: userData.nickname,
+        profileImage: userData.profileImage || userData.profileUrl,
+        전체응답: userData,
       });
+      
+      // ✅ 백엔드 응답 기준으로 사용자 정보 설정
+      setUserInfo({
+        email: userData.email,
+        nickname: userData.nickname,
+        profileImage: userData.profileImage || userData.profileUrl || null,
+      });
+      
+      // ✅ localStorage도 동기화 (UI 표시용)
+      if (typeof window !== "undefined") {
+        localStorage.setItem("userEmail", userData.email);
+        localStorage.setItem("userNickname", userData.nickname);
+        if (userData.profileImage || userData.profileUrl) {
+          localStorage.setItem("userProfileImage", userData.profileImage || userData.profileUrl || "");
+        } else {
+          localStorage.removeItem("userProfileImage");
+        }
+      }
+    } catch (err) {
+      console.error("[MyPage] loadUserInfo - ❌ 사용자 정보 조회 실패:", err);
+      // ✅ 실패 시 localStorage에서 fallback (하위 호환성)
+      if (typeof window !== "undefined") {
+        const email = localStorage.getItem("userEmail") || "";
+        const nickname = localStorage.getItem("userNickname") || email.split("@")[0] || "사용자";
+        const profileImage = localStorage.getItem("userProfileImage");
+        
+        setUserInfo({
+          email,
+          nickname,
+          profileImage,
+        });
+      }
     }
   };
 
@@ -61,16 +96,80 @@ export default function MyPage() {
     };
   }, []);
 
-  const handleSaveProfile = (nickname: string, profileImage: string | null) => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("userNickname", nickname);
-      if (profileImage) {
-        localStorage.setItem("userProfileImage", profileImage);
+  // ✅ 백엔드 API로 프로필 업데이트
+  const handleSaveProfile = async (nickname: string, profileImage: string | null) => {
+    try {
+      console.log("[MyPage] handleSaveProfile - 프로필 저장 시작:", {
+        nickname,
+        hasProfileImage: !!profileImage,
+        profileImageType: typeof profileImage,
+      });
+      
+      // ✅ 닉네임 업데이트
+      if (nickname.trim() && nickname !== userInfo?.nickname) {
+        console.log("[MyPage] handleSaveProfile - 닉네임 변경 감지, PATCH /users/nickname 호출");
+        await updateNickname(nickname.trim());
+        console.log("[MyPage] handleSaveProfile - ✅ 닉네임 업데이트 성공");
       } else {
-        localStorage.removeItem("userProfileImage");
+        console.log("[MyPage] handleSaveProfile - 닉네임 변경 없음, API 호출 생략");
       }
-      loadUserInfo();
+      
+      // ✅ 프로필 이미지 업데이트
+      // profileImage가 base64 문자열인 경우 File로 변환
+      const currentProfileImage = userInfo?.profileImage || null;
+      const profileImageChanged = profileImage !== currentProfileImage;
+      
+      if (profileImageChanged) {
+        console.log("[MyPage] handleSaveProfile - 프로필 이미지 변경 감지, PATCH /users/profile 호출");
+        console.log("[MyPage] handleSaveProfile - 프로필 이미지 정보:", {
+          current: currentProfileImage ? "있음" : "없음",
+          new: profileImage ? "있음" : "없음",
+          isBase64: typeof profileImage === "string" && profileImage.startsWith("data:"),
+        });
+        
+        let imageToSend: File | string | null = profileImage;
+        
+        // base64 문자열을 File로 변환 (백엔드가 File을 기대하는 경우)
+        if (typeof profileImage === "string" && profileImage.startsWith("data:image")) {
+          try {
+            // data:image/png;base64,xxxxx 형식에서 추출
+            const base64Data = profileImage.split(",")[1];
+            const mimeType = profileImage.match(/data:image\/(\w+);base64/)?.[1] || "png";
+            const byteCharacters = atob(base64Data);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: `image/${mimeType}` });
+            imageToSend = new File([blob], `profile.${mimeType}`, { type: `image/${mimeType}` });
+            console.log("[MyPage] handleSaveProfile - base64를 File로 변환 완료:", {
+              fileName: imageToSend.name,
+              fileSize: imageToSend.size,
+              fileType: imageToSend.type,
+            });
+          } catch (err) {
+            console.error("[MyPage] handleSaveProfile - base64 변환 실패, 문자열로 전송:", err);
+            // 변환 실패 시 문자열로 전송
+            imageToSend = profileImage;
+          }
+        }
+        
+        await updateProfile(imageToSend);
+        console.log("[MyPage] handleSaveProfile - ✅ 프로필 이미지 업데이트 성공");
+      } else {
+        console.log("[MyPage] handleSaveProfile - 프로필 이미지 변경 없음, API 호출 생략");
+      }
+      
+      // ✅ 업데이트 후 사용자 정보 재조회
+      console.log("[MyPage] handleSaveProfile - 사용자 정보 재조회 시작");
+      await loadUserInfo();
+      
       setIsEditingProfile(false);
+      console.log("[MyPage] handleSaveProfile - ✅ 프로필 저장 완료");
+    } catch (err) {
+      console.error("[MyPage] handleSaveProfile - ❌ 프로필 저장 실패:", err);
+      alert("프로필 저장에 실패했습니다. 다시 시도해주세요.");
     }
   };
 

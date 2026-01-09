@@ -130,6 +130,16 @@ export async function checkAuth(): Promise<{ authenticated: boolean; user?: any 
         status: response.status,
         hasData: !!response.data,
         endpoint: "/users/me",
+        responseData: response.data,
+      });
+      
+      // ✅ 재로그인 시 사용자 정보 확인을 위한 상세 로그
+      console.log("[Auth] checkAuth - /users/me 응답 상세:", {
+        email: response.data?.email,
+        nickname: response.data?.nickname,
+        profileImage: response.data?.profileImage,
+        profileUrl: response.data?.profileUrl,
+        전체응답: JSON.stringify(response.data, null, 2),
       });
       
       return {
