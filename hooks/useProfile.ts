@@ -214,7 +214,19 @@ export function useProfile() {
         });
       } else {
         // 예상치 못한 타입인 경우 처리하지 않음
-        const isFile = profileImage !== null && profileImage !== undefined && typeof profileImage === "object" && profileImage instanceof File;
+        // ✅ 타입 가드를 명확하게 분리하여 TypeScript 오류 방지
+        let isFile = false;
+        if (profileImage !== null && profileImage !== undefined) {
+          // 타입 단언을 사용하여 instanceof 체크 가능하도록 함
+          const profileImageAsObject = profileImage as any;
+          if (typeof profileImageAsObject === "object") {
+            try {
+              isFile = profileImageAsObject instanceof File;
+            } catch {
+              isFile = false;
+            }
+          }
+        }
         console.error("[Profile] updateProfile - 예상치 못한 profileImage 타입:", {
           profileImage,
           type: typeof profileImage,
