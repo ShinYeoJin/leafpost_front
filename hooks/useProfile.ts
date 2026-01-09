@@ -95,10 +95,11 @@ export async function getUserInfo(): Promise<GetUserInfoResponse> {
     });
     
     // ✅ 프로필 이미지 필드를 통일하여 반환
+    // null을 undefined로 변환하여 타입 호환성 확보
     return {
       ...userData,
-      profileImage: profileImageValue,
-      profileUrl: profileImageValue,
+      profileImage: profileImageValue || undefined,
+      profileUrl: profileImageValue || undefined,
     };
   } catch (error) {
     console.error("[Profile] getUserInfo - ❌ 사용자 정보 조회 실패:", error);
