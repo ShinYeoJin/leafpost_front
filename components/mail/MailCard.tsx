@@ -47,7 +47,9 @@ export default function MailCard({
       clearTimeout(debounceTimerRef.current);
     }
 
-    if (!originalText.trim()) {
+    const trimmedText = originalText.trim();
+
+    if (!trimmedText) {
       setPreviewText("");
       setPreviewError(null);
       setIsLoading(false);
@@ -56,28 +58,24 @@ export default function MailCard({
 
     setIsLoading(true);
     setPreviewError(null);
-    debounceTimerRef.current = setTimeout(async () => {
-      try {
-        // toneType이 있는 경우에만 미리보기 API 호출
-        if (!toneType || !toneType.trim()) {
-          console.error(
-            `[MailCard] previewEmail - toneType 누락 (villagerId: ${villagerId}, toneType: ${toneType})`
-          );
-          setPreviewText("");
-          setPreviewError("말투 정보를 찾을 수 없습니다.");
-          setIsLoading(false);
-          return;
-        }
 
+    // ✅ 이 MailCard는 단순 미리보기 용도이므로,
+    //    서버 Preview API 변경으로 인한 500을 피하기 위해
+    //    클라이언트에서만 미리보기를 생성합니다.
+    debounceTimerRef.current = setTimeout(() => {
+      try {
+        // toneType이 없더라도 여기서는 단순 텍스트 미리보기만 사용
         console.log(
-          `[MailCard] previewEmail 호출 - villagerId: ${villagerId}, toneType: ${toneType}, originalText: ${originalText.substring(0, 50)}...`
+          `[MailCard] 클라이언트 미리보기 생성 - villagerId: ${villagerId}, toneType: ${toneType}, originalText: ${trimmedText.substring(
+            0,
+            50
+          )}...`
         );
-        const response = await previewEmail(villagerId, originalText, toneType);
-        setPreviewText(response.previewContent);
+        setPreviewText(trimmedText);
         setPreviewError(null);
       } catch (err) {
         const error = err instanceof Error ? err : new Error("Preview failed");
-        console.error(`[MailCard] previewEmail 실패:`, error);
+        console.error(`[MailCard] 클라이언트 미리보기 실패:`, error);
         setPreviewError(error.message);
         setPreviewText("");
       } finally {

@@ -366,35 +366,53 @@ export async function previewEmail(
   originalText: string,
   toneType: string
 ): Promise<{ previewContent: string }> {
-  // toneType 검증
-  if (!toneType || !toneType.trim()) {
-    const error = new Error("toneType이 필수입니다. villager 데이터를 확인해주세요.");
-    console.error("[Emails] previewEmail - toneType 누락:", { villagerId, originalText, toneType });
-    throw error;
-  }
-  
-  const payload = {
-    villagerId,
-    originalText,
-    toneType,
-  };
-  
-  console.log("[Emails] previewEmail - payload:", JSON.stringify(payload, null, 2));
-  
-  // 개발 환경에서만 Mock Preview Email 사용
-  if ((process.env.NODE_ENV as string) === "development") {
-    console.log("[DEV] Mock Preview Email 사용 중 - 실제 API 호출하지 않음");
-    return mockPreviewEmail(villagerId, originalText);
+  // ⚠️ 주의: 현재 백엔드 Preview DTO는 receiverEmail을 요구합니다.
+  // 이 함수는 구 버전 호환용이며, MailCardForm에서는 previewEmailCard를 사용합니다.
+  // 잘못된 payload로 백엔드에 500을 유발하지 않도록, Production에서는
+  // API를 호출하지 않고 클라이언트에서 단순 미리보기만 제공합니다.
+
+  const trimmedText = (originalText || "").trim();
+
+  // 내용이 없으면 미리보기도 비움
+  if (!trimmedText) {
+    console.log("[Emails] previewEmail - originalText가 비어 있어 미리보기를 생성하지 않습니다.", {
+      villagerId,
+      toneType,
+    });
+    return { previewContent: "" };
   }
 
-  // Production 환경에서는 실제 API 호출
-  console.log(`[Emails] previewEmail - 실제 API 호출: POST /emails/preview`);
-  const response = await apiFetch<{ previewContent: string }>("/emails/preview", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-  console.log("[Emails] previewEmail - 응답:", response.data);
-  return response.data;
+  // toneType 검증
+  if (!toneType || !toneType.trim()) {
+    const error = new Error(
+      "toneType이 필수입니다. villager 데이터를 확인해주세요."
+    );
+    console.error("[Emails] previewEmail - toneType 누락:", {
+      villagerId,
+      originalText,
+      toneType,
+    });
+    // ✅ 서버에 잘못된 요청을 보내지 않고, 단순 텍스트 미리보기만 반환
+    return { previewContent: trimmedText };
+  }
+
+  const payload = {
+    villagerId,
+    originalText: trimmedText,
+    toneType: toneType.trim(),
+  };
+
+  console.log("[Emails] previewEmail - payload (클라이언트 전용 미리보기):", payload);
+
+  // 개발 환경에서는 기존 Mock 동작 유지
+  if ((process.env.NODE_ENV as string) === "development") {
+    console.log("[DEV] Mock Preview Email 사용 중 - 실제 API 호출하지 않음");
+    return mockPreviewEmail(villagerId, trimmedText);
+  }
+
+  // ✅ Production에서는 서버 API를 호출하지 않고, 입력 텍스트를 그대로 미리보기로 사용
+  //    (서버 DTO 변경으로 인한 500 방지)
+  return { previewContent: trimmedText };
 }
 
 /**
@@ -450,6 +468,19 @@ export async function previewEmailCard(
   toneType: string,
   receiverEmail: string // Preview API에서도 receiverEmail 필수
 ): Promise<PreviewEmailCardResponse> {
+  const trimmedText = (originalText || "").trim();
+
+  if (!trimmedText) {
+    const error = new Error("originalText가 비어 있어 미리보기를 생성할 수 없습니다.");
+    console.error("[Emails] previewEmailCard - originalText 누락:", {
+      villagerId,
+      originalText,
+      toneType,
+      receiverEmail,
+    });
+    throw error;
+  }
+
   // toneType 검증
   if (!toneType || !toneType.trim()) {
     const error = new Error("toneType이 필수입니다. villager 데이터를 확인해주세요.");
@@ -482,8 +513,8 @@ export async function previewEmailCard(
   
   const payload = {
     villagerId,
-    originalText,
-    toneType,
+    originalText: trimmedText,
+    toneType: toneType.trim(),
     receiverEmail: trimmedEmail,
   };
   
@@ -492,15 +523,27 @@ export async function previewEmailCard(
   // 개발 환경에서만 Mock Preview Email Card 사용
   if ((process.env.NODE_ENV as string) === "development") {
     console.log("[DEV] Mock Preview Email Card 사용 중 - 실제 API 호출하지 않음");
-    return mockPreviewEmailCard(villagerId, originalText);
+    return mockPreviewEmailCard(villagerId, trimmedText);
   }
 
   // Production 환경에서는 실제 API 호출
   console.log(`[Emails] previewEmailCard - 실제 API 호출: POST /emails/preview`);
-  const response = await apiFetch<PreviewEmailCardResponse>("/emails/preview", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-  console.log("[Emails] previewEmailCard - 응답:", response.data);
-  return response.data;
+  try {
+    const response = await apiFetch<PreviewEmailCardResponse>("/emails/preview", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    console.log("[Emails] previewEmailCard - 응답:", response.data);
+    return response.data;
+  } catch (err: any) {
+    console.error("[Emails] previewEmailCard - API 호출 실패:", err);
+
+    // 500 에러 등 서버측 에러에 대해 로그를 최대한 남기고, 상위에서 UX fallback 처리
+    const message =
+      err && typeof err === "object" && "message" in err
+        ? (err as Error).message
+        : "미리보기를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.";
+
+    throw new Error(message);
+  }
 }
