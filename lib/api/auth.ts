@@ -75,7 +75,7 @@ export async function login(email: string, password: string): Promise<LoginRespo
   
   // Production 환경에서는 실제 API 호출
   console.log("[Auth] login - 로그인 API 호출 시작");
-  console.log("[Auth] login - 요청 URL:", `${process.env.NEXT_PUBLIC_API_BASE_URL || ""}/auth/login`);
+  console.log("[Auth] login - 요청 URL:", `${process.env.NEXT_PUBLIC_API_BASE_URL || BASE_URL}/auth/login`);
   console.log("[Auth] login - credentials: include 사용");
   
   try {
@@ -95,6 +95,12 @@ export async function login(email: string, password: string): Promise<LoginRespo
     if (typeof document !== "undefined") {
       console.log("[Auth] login - 현재 document.cookie:", document.cookie || "(쿠키 없음)");
       console.log("[Auth] login - 참고: httpOnly 쿠키는 document.cookie에서 보이지 않습니다.");
+      
+      // 쿠키가 설정되기를 기다림 (sameSite: 'none' 쿠키는 비동기적으로 설정될 수 있음)
+      // 브라우저가 Set-Cookie 헤더를 처리하는 시간을 확보
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      console.log("[Auth] login - 쿠키 설정 대기 완료");
     }
     
     return response.data;

@@ -22,12 +22,17 @@ export default function LoginPage() {
       // 사용자 이메일만 localStorage에 저장 (UI 표시용)
       localStorage.setItem("userEmail", email);
       
-      // 쿠키가 브라우저에 반영되도록 짧은 대기
-      // (Set-Cookie 헤더가 브라우저에 적용되는 데 시간이 걸릴 수 있음)
-      await new Promise(resolve => setTimeout(resolve, 200));
+      // ✅ 쿠키가 브라우저에 반영되도록 충분한 대기
+      // sameSite: 'none' 쿠키는 크로스 도메인 설정이므로 브라우저 처리 시간이 필요함
+      // login 함수 내부에서 이미 300ms 대기하므로 추가 대기 불필요
+      // 하지만 안전을 위해 추가 대기
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      console.log("[LoginPage] 로그인 성공 - /main으로 리다이렉트");
       
       // ✅ 완전한 페이지 리로드를 통해 middleware가 새로 실행되도록 함
       // router.push는 클라이언트 사이드 네비게이션이라 쿠키가 반영되지 않을 수 있음
+      // window.location.href는 완전한 페이지 리로드이므로 쿠키가 포함됨
       window.location.href = "/main";
     } catch (err) {
       const errorMessage =

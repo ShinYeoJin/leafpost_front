@@ -75,12 +75,17 @@ export async function apiFetch<T = unknown>(
 
     // 로그인 API 응답 헤더 확인 (모바일 디버깅용)
     if (path.includes("/auth/login")) {
+      // Set-Cookie 헤더는 브라우저 보안 정책으로 인해 JavaScript에서 읽을 수 없음
+      // 하지만 응답 헤더에 포함되어 있는지 확인은 가능
       const setCookieHeader = response.headers.get("set-cookie");
+      const allHeaders = Object.fromEntries(response.headers.entries());
+      
       console.log("[API] apiFetch - 로그인 응답 헤더:", {
         status: response.status,
         statusText: response.statusText,
-        setCookie: setCookieHeader || "(Set-Cookie 헤더 없음)",
-        allHeaders: Object.fromEntries(response.headers.entries()),
+        setCookie: setCookieHeader || "(Set-Cookie 헤더 없음 - 브라우저 보안 정책으로 읽을 수 없을 수 있음)",
+        hasSetCookie: !!setCookieHeader,
+        allHeaders: allHeaders,
       });
       
       // 모바일 환경 감지
@@ -89,7 +94,24 @@ export async function apiFetch<T = unknown>(
         isMobile,
         userAgent: typeof window !== "undefined" ? navigator.userAgent : "N/A",
         origin: typeof window !== "undefined" ? window.location.origin : "N/A",
+        protocol: typeof window !== "undefined" ? window.location.protocol : "N/A",
+        isHTTPS: typeof window !== "undefined" ? window.location.protocol === "https:" : "N/A",
       });
+      
+      // ⚠️ sameSite: 'none' 쿠키는 HTTPS에서만 작동함
+      if (typeof window !== "undefined" && window.location.protocol !== "https:") {
+        console.warn("[API] ⚠️ sameSite: 'none' 쿠키는 HTTPS에서만 작동합니다. 현재 프로토콜:", window.location.protocol);
+      }
+      
+      // Set-Cookie 헤더가 없는 경우 경고
+      if (!setCookieHeader) {
+        console.error("[API] ❌ Set-Cookie 헤더가 응답에 없습니다. 백엔드 CORS 설정을 확인하세요.");
+        console.error("[API] 백엔드에서 확인 필요:", {
+          "Access-Control-Allow-Credentials": "true",
+          "Access-Control-Allow-Origin": "프론트엔드 도메인 (와일드카드 '*' 사용 불가)",
+          "Set-Cookie": "accessToken, refreshToken (sameSite: 'none', secure: true)",
+        });
+      }
     }
 
     if (response.status === 401 && onUnauthorized) {
