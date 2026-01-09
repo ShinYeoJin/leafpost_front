@@ -214,10 +214,11 @@ export function useProfile() {
         });
       } else {
         // 예상치 못한 타입인 경우 처리하지 않음
+        const isFile = profileImage !== null && profileImage !== undefined && typeof profileImage === "object" && profileImage instanceof File;
         console.error("[Profile] updateProfile - 예상치 못한 profileImage 타입:", {
           profileImage,
           type: typeof profileImage,
-          isFile: profileImage instanceof File,
+          isFile,
         });
         setIsLoading(false);
         setError(new Error("Invalid profile image type"));
