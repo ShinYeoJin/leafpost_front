@@ -53,14 +53,23 @@ export default function MainPage() {
         setIsLoading(true);
         setError(null);
         
-        // ✅ 인기순으로 주민 목록 가져오기 (sort=popular, limit=8)
+        // ✅ 인기순으로 주민 목록 가져오기 (sort=popular, limit=12)
         // 백엔드에서 이미 인기순으로 정렬되어 내려오므로 프론트에서 별도 정렬 불필요
-        const response = await getVillagers('popular', 8);
+        // 전체 12명의 주민을 표시하며, 인기순 상위 3명은 배열 맨 앞에 위치
+        const response = await getVillagers('popular', 12);
         
         console.log("[MainPage] fetchVillagers - 인기순 주민 목록 조회 성공:", {
           villagersCount: response.villagers.length,
           isValid: response.isValid,
-          top3: response.villagers.slice(0, 3).map(v => ({
+          top3: response.villagers.slice(0, 3).map((v, index) => ({
+            rank: index + 1,
+            id: v.id,
+            name: v.name,
+            usageCount: v.usageCount,
+            hasUsageCount: v.usageCount !== undefined,
+          })),
+          allVillagers: response.villagers.map((v, index) => ({
+            rank: index + 1,
             id: v.id,
             name: v.name,
             usageCount: v.usageCount,

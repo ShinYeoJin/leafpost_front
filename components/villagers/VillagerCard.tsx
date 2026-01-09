@@ -37,8 +37,8 @@ export default function VillagerCard({
               <span className="text-3xl sm:text-4xl">🐾</span>
             </div>
           )}
-          {/* ✅ 인기 순위 배지 표시 (상위 3명만) */}
-          {popularityRank && popularityRank <= 3 && usageCount !== undefined && usageCount > 0 && (
+          {/* ✅ 인기 순위 배지 표시 (상위 3명만, usageCount와 무관하게 index 기반 강제 표시) */}
+          {popularityRank && popularityRank <= 3 && (
             <div className="absolute top-2 right-2 flex items-center gap-1 z-20">
               {/* 순위별 스타일 */}
               {popularityRank === 1 && (
@@ -67,12 +67,14 @@ export default function VillagerCard({
             {name}
           </h3>
           {/* ✅ 선택 횟수(usageCount) 카드 하단에 표시 */}
+          {/* usageCount가 존재하면 표시, 없거나 0이면 생략 */}
           {usageCount !== undefined && usageCount > 0 && (
             <div className="text-[10px] sm:text-xs text-zinc-500 font-medium">
               선택 {usageCount}회
             </div>
           )}
-          {/* ✅ Redis 장애 시 usageCount가 0이거나 undefined인 경우 표시하지 않음 */}
+          {/* ✅ Redis 장애나 데이터 부족 시 usageCount가 0이거나 undefined인 경우 표시하지 않음 */}
+          {/* 배지는 상위 3명 index 기반으로 강제 표시되므로 usageCount와 무관 */}
         </div>
       </div>
 
