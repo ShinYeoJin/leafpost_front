@@ -6,6 +6,8 @@ type VillagerCardProps = {
   name: string;
   imageUrl: string;
   isPopular: boolean;
+  popularityRank?: number; // 인기 순위 (1, 2, 3 등)
+  popularityCount?: number; // 선택 횟수
   exampleSentence: string;
 };
 
@@ -13,6 +15,8 @@ export default function VillagerCard({
   name,
   imageUrl,
   isPopular,
+  popularityRank,
+  popularityCount,
   exampleSentence,
 }: VillagerCardProps) {
   const [imageError, setImageError] = useState(false);
@@ -33,9 +37,37 @@ export default function VillagerCard({
               <span className="text-3xl sm:text-4xl">🐾</span>
             </div>
           )}
-          {isPopular && (
-            <div className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 text-[10px] sm:text-xs font-semibold px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full">
-              인기
+          {/* ✅ 인기 순위 배지 표시 */}
+          {isPopular && popularityRank && popularityRank <= 3 && (
+            <div className="absolute top-2 right-2 flex items-center gap-1">
+              {/* 순위별 스타일 */}
+              {popularityRank === 1 && (
+                <div className="bg-gradient-to-br from-yellow-400 to-yellow-600 text-yellow-900 text-[10px] sm:text-xs font-bold px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-full shadow-lg flex items-center gap-1">
+                  <span className="text-sm sm:text-base">🥇</span>
+                  <span>1위</span>
+                  {popularityCount !== undefined && (
+                    <span className="text-[9px] sm:text-[10px] opacity-75">({popularityCount})</span>
+                  )}
+                </div>
+              )}
+              {popularityRank === 2 && (
+                <div className="bg-gradient-to-br from-gray-300 to-gray-500 text-gray-900 text-[10px] sm:text-xs font-bold px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-full shadow-lg flex items-center gap-1">
+                  <span className="text-sm sm:text-base">🥈</span>
+                  <span>2위</span>
+                  {popularityCount !== undefined && (
+                    <span className="text-[9px] sm:text-[10px] opacity-75">({popularityCount})</span>
+                  )}
+                </div>
+              )}
+              {popularityRank === 3 && (
+                <div className="bg-gradient-to-br from-amber-600 to-amber-800 text-amber-100 text-[10px] sm:text-xs font-bold px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-full shadow-lg flex items-center gap-1">
+                  <span className="text-sm sm:text-base">🥉</span>
+                  <span>3위</span>
+                  {popularityCount !== undefined && (
+                    <span className="text-[9px] sm:text-[10px] opacity-75">({popularityCount})</span>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>

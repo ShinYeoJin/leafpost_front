@@ -6,6 +6,7 @@ import Header from "@/components/common/Header";
 import VillagerCard from "@/components/villagers/VillagerCard";
 import MailCardForm from "@/components/mail/MailCardForm";
 import { getVillagers, type Villager as ApiVillager } from "@/lib/api/villagers";
+import { getPopularityRankings, type PopularityRank } from "@/lib/api/cards";
 import { checkAuth } from "@/lib/api/auth";
 
 export default function MainPage() {
@@ -17,6 +18,7 @@ export default function MainPage() {
   const [selectedVillager, setSelectedVillager] = useState<ApiVillager | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAuthChecked, setIsAuthChecked] = useState(false);
+  const [popularityRankings, setPopularityRankings] = useState<Map<number, PopularityRank>>(new Map());
 
   // ✅ 크로스 도메인 쿠키 문제로 middleware에서 인증 체크 불가능
   // 클라이언트에서 인증 상태 확인
@@ -52,12 +54,35 @@ export default function MainPage() {
       try {
         setIsLoading(true);
         setError(null);
-        const response = await getVillagers();
         
-        // 배열 검증: response.villagers가 실제 배열인지 확인
-        if (Array.isArray(response.villagers)) {
-          setVillagers(response.villagers);
-          setIsValidResponse(response.isValid);
+        // ✅ 주민 목록과 인기 순위를 병렬로 가져오기
+        const [villagersResponse, popularityResponse] = await Promise.all([
+          getVillagers(),
+          getPopularityRankings(),
+        ]);
+        
+        // ✅ 인기 순위를 Map으로 변환 (villagerId를 키로 사용)
+        const rankingsMap = new Map<number, PopularityRank>();
+        if (popularityResponse.rankings && Array.isArray(popularityResponse.rankings)) {
+          popularityResponse.rankings.forEach((ranking) => {
+            rankingsMap.set(ranking.villagerId, ranking);
+          });
+        }
+        setPopularityRankings(rankingsMap);
+        
+        // ✅ 주민 목록에 인기 순위 정보 추가
+        if (Array.isArray(villagersResponse.villagers)) {
+          const villagersWithRanking = villagersResponse.villagers.map((villager) => {
+            const ranking = rankingsMap.get(villager.id);
+            return {
+              ...villager,
+              popularityRank: ranking?.rank,
+              popularityCount: ranking?.count,
+            };
+          });
+          
+          setVillagers(villagersWithRanking);
+          setIsValidResponse(villagersResponse.isValid);
         } else {
           // 이중 방어: 만약 villagers가 배열이 아닌 경우
           setVillagers([]);
@@ -200,7 +225,9 @@ export default function MainPage() {
               <VillagerCard
                 name={villager.name}
                 imageUrl={villager.imageUrl}
-                isPopular={false}
+                isPopular={villager.popularityRank !== undefined && villager.popularityRank <= 3}
+                popularityRank={villager.popularityRank}
+                popularityCount={villager.popularityCount}
                 exampleSentence={villager.toneExample}
               />
             </div>

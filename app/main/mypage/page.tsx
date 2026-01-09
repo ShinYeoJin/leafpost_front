@@ -174,11 +174,15 @@ export default function MyPage() {
           isBase64: typeof profileImage === "string" && profileImage.startsWith("data:"),
         });
         
-        // ✅ null인 경우 프로필 이미지 제거 요청을 보내지 않음
+        // ✅ null인 경우 프로필 이미지 제거 처리
         // 백엔드가 "property profileImage should not exist" 에러를 반환하므로
+        // 별도 DELETE API가 없으면 사용자 정보 재조회로 기본값 반영
         if (profileImage === null) {
-          console.log("[MyPage] handleSaveProfile - profileImage가 null이므로 API 호출 생략");
-          console.log("[MyPage] handleSaveProfile - 참고: 프로필 이미지 제거는 별도 API가 필요할 수 있습니다");
+          console.log("[MyPage] handleSaveProfile - profileImage가 null이므로 이미지 제거 처리");
+          console.log("[MyPage] handleSaveProfile - 사용자 정보 재조회하여 기본값 반영");
+          // ✅ 이미지 제거 후 사용자 정보 재조회하여 기본값으로 업데이트
+          await loadUserInfo();
+          console.log("[MyPage] handleSaveProfile - ✅ 프로필 이미지 제거 완료 (기본값 반영)");
         } else {
           console.log("[MyPage] handleSaveProfile - PATCH /users/profile 호출");
           

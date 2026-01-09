@@ -19,6 +19,8 @@ export type Villager = {
   iconUrl: string;
   toneExample: string;
   toneType: string;
+  popularityRank?: number; // 인기 순위 (1, 2, 3 등)
+  popularityCount?: number; // 선택 횟수
 };
 
 export type GetVillagersResponse = {

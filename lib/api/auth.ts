@@ -147,6 +147,17 @@ export async function checkAuth(): Promise<{ authenticated: boolean; user?: any 
         userData = response.data;
       }
       
+      // ✅ iOS 환경에서 쿠키가 제대로 포함되지 않았을 수 있으므로 추가 확인
+      if (!userData || !userData.email) {
+        console.warn("[Auth] checkAuth - ⚠️ 사용자 데이터가 없거나 불완전함:", {
+          hasUserData: !!userData,
+          hasEmail: !!userData?.email,
+          responseData: response.data,
+        });
+        // iOS 환경에서는 재시도가 필요할 수 있음
+        return { authenticated: false };
+      }
+      
       // ✅ 백엔드 응답에서 프로필 이미지 필드명이 다를 수 있음
       const profileImageValue = 
         userData?.profileImage || 
