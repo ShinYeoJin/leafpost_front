@@ -20,14 +20,27 @@ export default function LoginPage() {
     try {
       // ✅ 모바일 환경 확인
       const isMobile = typeof window !== "undefined" && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const isIOS = typeof window !== "undefined" && /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const isAndroid = typeof window !== "undefined" && /Android/i.test(navigator.userAgent);
       const isHTTPS = typeof window !== "undefined" ? window.location.protocol === "https:" : false;
       
       console.log("[LoginPage] 로그인 시도:", {
         email,
         isMobile,
+        isIOS,
+        isAndroid,
         isHTTPS,
         userAgent: typeof window !== "undefined" ? navigator.userAgent?.substring(0, 100) : "N/A",
+        platform: typeof window !== "undefined" ? navigator.platform : "N/A",
       });
+      
+      // ✅ iOS 환경 특별 안내
+      if (isIOS) {
+        console.log("[LoginPage] iOS 환경 감지 - 쿠키 처리 주의:");
+        console.log("[LoginPage] - iOS Safari는 ITP로 인해 쿠키가 제한될 수 있음");
+        console.log("[LoginPage] - HTTPS 환경 필수:", isHTTPS);
+        console.log("[LoginPage] - 로그인 후 /users/me 호출로 쿠키 포함 여부 확인");
+      }
       
       const response = await login(email, password);
       // 백엔드에서 httpOnly 쿠키로 토큰을 설정하므로 클라이언트에서 저장할 필요 없음
@@ -56,6 +69,12 @@ export default function LoginPage() {
           console.error("[LoginPage] - HTTPS 환경:", isHTTPS);
           console.error("[LoginPage] - SameSite=None, Secure=true 쿠키는 HTTPS 환경에서만 작동합니다");
         }
+        if (isIOS) {
+          console.error("[LoginPage] iOS 환경 - 추가 확인 필요:");
+          console.error("[LoginPage] - iOS Safari는 ITP로 인해 쿠키가 차단될 수 있음");
+          console.error("[LoginPage] - 사용자가 사이트를 직접 방문한 경우에만 쿠키가 설정됨");
+          console.error("[LoginPage] - 쿠키 설정 후 다음 요청에서 쿠키 포함 여부 확인 필요");
+        }
         setError("로그인에 실패했습니다. 다시 시도해주세요.");
       }
     } catch (err) {
@@ -65,13 +84,16 @@ export default function LoginPage() {
       
       // 모바일 환경에서 쿠키 관련 에러인 경우 추가 안내
       const isMobile = typeof window !== "undefined" && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const isIOS = typeof window !== "undefined" && /iPhone|iPad|iPod/i.test(navigator.userAgent);
       const isHTTPS = typeof window !== "undefined" ? window.location.protocol === "https:" : false;
       
       console.error("[LoginPage] 로그인 에러:", {
         error: errorMessage,
         isMobile,
+        isIOS,
         isHTTPS,
         errorType: err instanceof Error ? err.constructor.name : typeof err,
+        errorStack: err instanceof Error ? err.stack?.substring(0, 200) : undefined,
       });
       
       if (isMobile && (errorMessage.includes("401") || errorMessage.includes("인증") || errorMessage.includes("load failed"))) {
@@ -80,6 +102,12 @@ export default function LoginPage() {
         console.warn("[Login] - HTTPS 환경:", isHTTPS);
         console.warn("[Login] - credentials: 'include' 설정 확인");
         console.warn("[Login] - SameSite=None, Secure=true 쿠키는 HTTPS 환경에서만 작동합니다");
+        if (isIOS) {
+          console.warn("[Login] iOS 특별 안내:");
+          console.warn("[Login] - iOS Safari는 ITP로 인해 쿠키가 차단될 수 있음");
+          console.warn("[Login] - 사용자가 사이트를 직접 방문한 경우에만 쿠키가 설정됨");
+          console.warn("[Login] - 쿠키 설정 후 다음 요청에서 쿠키 포함 여부 확인 필요");
+        }
       }
     } finally {
       setIsLoading(false);

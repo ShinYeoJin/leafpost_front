@@ -28,18 +28,41 @@ export default function MyPage() {
       console.log("[MyPage] loadUserInfo - /users/me API 호출 시작");
       const userData = await getUserInfo();
       
+      // ✅ 프로필 이미지 값 확인 (다양한 필드명 지원)
+      const profileImageValue = 
+        userData.profileImage || 
+        userData.profileUrl || 
+        userData.profile_image || 
+        userData.imageUrl ||
+        userData.profileImageUrl ||
+        null;
+      
       console.log("[MyPage] loadUserInfo - ✅ 사용자 정보 조회 성공:", {
         email: userData.email,
         nickname: userData.nickname,
-        profileImage: userData.profileImage || userData.profileUrl,
+        profileImage: userData.profileImage,
+        profileUrl: userData.profileUrl,
+        profile_image: userData.profile_image,
+        imageUrl: userData.imageUrl,
+        profileImageUrl: userData.profileImageUrl,
+        최종_profileImage: profileImageValue,
+        profileImage_타입: typeof profileImageValue,
+        profileImage_길이: profileImageValue ? profileImageValue.length : 0,
         전체응답: userData,
+        전체응답_키목록: Object.keys(userData),
       });
       
       // ✅ 백엔드 응답 기준으로 사용자 정보 설정
       setUserInfo({
         email: userData.email,
         nickname: userData.nickname,
-        profileImage: userData.profileImage || userData.profileUrl || null,
+        profileImage: profileImageValue,
+      });
+      
+      console.log("[MyPage] loadUserInfo - state 설정 완료:", {
+        email: userData.email,
+        nickname: userData.nickname,
+        profileImage: profileImageValue,
       });
       
       // ✅ localStorage도 동기화 (UI 표시용)
@@ -313,6 +336,17 @@ export default function MyPage() {
                           alt={userInfo.nickname}
                           fill
                           className="object-cover"
+                          onError={(e) => {
+                            console.error("[MyPage] 프로필 이미지 로드 실패:", {
+                              src: userInfo.profileImage,
+                              error: e,
+                            });
+                            // 이미지 로드 실패 시 기본 아이콘 표시
+                            e.currentTarget.style.display = 'none';
+                          }}
+                          onLoad={() => {
+                            console.log("[MyPage] 프로필 이미지 로드 성공:", userInfo.profileImage);
+                          }}
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-3xl bg-gradient-to-br from-sky-200 to-yellow-200">

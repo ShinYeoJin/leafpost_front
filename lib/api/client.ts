@@ -56,6 +56,10 @@ export async function apiFetch<T = unknown>(
     // 모바일 환경 디버깅을 위한 로그 (로그인 API만)
     if (path.includes("/auth/login")) {
       const isMobile = typeof window !== "undefined" && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const isIOS = typeof window !== "undefined" && /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const isAndroid = typeof window !== "undefined" && /Android/i.test(navigator.userAgent);
+      const isHTTPS = typeof window !== "undefined" ? window.location.protocol === "https:" : false;
+      
       console.log("[API] apiFetch - 로그인 요청:", {
         url: fullUrl,
         method: fetchConfig.method || "GET",
@@ -63,9 +67,20 @@ export async function apiFetch<T = unknown>(
         hasBody: !!fetchConfig.body,
         headers: requestHeaders,
         isMobile,
+        isIOS,
+        isAndroid,
         userAgent: typeof window !== "undefined" ? navigator.userAgent?.substring(0, 100) : "N/A",
-        isHTTPS: typeof window !== "undefined" ? window.location.protocol === "https:" : "N/A",
+        isHTTPS,
+        platform: typeof window !== "undefined" ? navigator.platform : "N/A",
       });
+      
+      // ✅ iOS 환경 특별 안내
+      if (isIOS) {
+        console.log("[API] iOS 환경 감지 - 쿠키 처리 확인:");
+        console.log("[API] - SameSite=None, Secure=true 쿠키는 iOS Safari에서 제한적일 수 있음");
+        console.log("[API] - iOS 13+에서는 ITP(Intelligent Tracking Prevention)로 인해 쿠키가 차단될 수 있음");
+        console.log("[API] - HTTPS 환경 필수:", isHTTPS);
+      }
     }
     
     const response = await fetch(
@@ -80,6 +95,8 @@ export async function apiFetch<T = unknown>(
     // 로그인 API 응답 확인 (디버깅용)
     if (path.includes("/auth/login")) {
       const isMobile = typeof window !== "undefined" && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const isIOS = typeof window !== "undefined" && /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const isHTTPS = typeof window !== "undefined" ? window.location.protocol === "https:" : false;
       
       // ⚠️ 중요: Set-Cookie 헤더는 브라우저 보안 정책으로 인해 JavaScript에서 읽을 수 없습니다.
       // response.headers.get("set-cookie")는 항상 null을 반환합니다. 이는 정상입니다.
@@ -97,7 +114,8 @@ export async function apiFetch<T = unknown>(
         status: response.status,
         statusText: response.statusText,
         isMobile,
-        isHTTPS: typeof window !== "undefined" ? window.location.protocol === "https:" : "N/A",
+        isIOS,
+        isHTTPS,
         setCookieHeader: setCookieHeader || "null (정상 - 브라우저 보안 정책)",
         allHeaders: Object.keys(allHeaders),
         note: "Set-Cookie 헤더는 브라우저 보안 정책으로 JavaScript에서 읽을 수 없습니다 (정상 동작)",
@@ -109,15 +127,22 @@ export async function apiFetch<T = unknown>(
         console.log("[API] 참고: httpOnly 쿠키는 document.cookie에서 보이지 않지만, 브라우저는 자동으로 저장하고 포함합니다");
         if (isMobile) {
           console.log("[API] 모바일 환경 - 쿠키 설정 확인:");
-          console.log("[API] - HTTPS 환경:", typeof window !== "undefined" ? window.location.protocol === "https:" : "N/A");
+          console.log("[API] - HTTPS 환경:", isHTTPS);
           console.log("[API] - credentials: 'include' 설정됨");
           console.log("[API] - SameSite=None, Secure=true 쿠키는 HTTPS 환경에서만 작동합니다");
+        }
+        if (isIOS) {
+          console.log("[API] ⚠️ iOS 환경 특별 안내:");
+          console.log("[API] - iOS Safari는 ITP(Intelligent Tracking Prevention)로 인해 쿠키가 차단될 수 있음");
+          console.log("[API] - 사용자가 사이트를 직접 방문한 경우에만 쿠키가 설정됨");
+          console.log("[API] - 쿠키 설정 후 다음 요청에서 쿠키 포함 여부 확인 필요");
         }
       } else {
         console.error("[API] ❌ 로그인 실패:", {
           status: response.status,
           statusText: response.statusText,
           isMobile,
+          isIOS,
         });
       }
     }

@@ -67,15 +67,35 @@ export async function getUserInfo(): Promise<GetUserInfoResponse> {
       userData = response.data;
     }
     
+    // ✅ 백엔드 응답에서 프로필 이미지 필드명이 다를 수 있음
+    // profileImage, profileUrl, profile_image, imageUrl 등 다양한 필드명 지원
+    const profileImageValue = 
+      userData?.profileImage || 
+      userData?.profileUrl || 
+      userData?.profile_image || 
+      userData?.imageUrl ||
+      userData?.profileImageUrl ||
+      null;
+    
     console.log("[Profile] getUserInfo - 파싱된 사용자 정보:", {
       email: userData?.email,
       nickname: userData?.nickname,
       profileImage: userData?.profileImage,
       profileUrl: userData?.profileUrl,
+      profile_image: userData?.profile_image,
+      imageUrl: userData?.imageUrl,
+      profileImageUrl: userData?.profileImageUrl,
+      최종_profileImage: profileImageValue,
       전체데이터: userData,
+      전체데이터_키목록: userData ? Object.keys(userData) : [],
     });
     
-    return userData;
+    // ✅ 프로필 이미지 필드를 통일하여 반환
+    return {
+      ...userData,
+      profileImage: profileImageValue,
+      profileUrl: profileImageValue,
+    };
   } catch (error) {
     console.error("[Profile] getUserInfo - ❌ 사용자 정보 조회 실패:", error);
     throw error;

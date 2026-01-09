@@ -147,14 +147,34 @@ export async function checkAuth(): Promise<{ authenticated: boolean; user?: any 
         userData = response.data;
       }
       
+      // ✅ 백엔드 응답에서 프로필 이미지 필드명이 다를 수 있음
+      const profileImageValue = 
+        userData?.profileImage || 
+        userData?.profileUrl || 
+        userData?.profile_image || 
+        userData?.imageUrl ||
+        userData?.profileImageUrl ||
+        null;
+      
       // ✅ 재로그인 시 사용자 정보 확인을 위한 상세 로그
       console.log("[Auth] checkAuth - /users/me 응답 상세:", {
         email: userData?.email,
         nickname: userData?.nickname,
         profileImage: userData?.profileImage,
         profileUrl: userData?.profileUrl,
+        profile_image: userData?.profile_image,
+        imageUrl: userData?.imageUrl,
+        profileImageUrl: userData?.profileImageUrl,
+        최종_profileImage: profileImageValue,
         전체응답: JSON.stringify(userData, null, 2),
+        전체응답_키목록: userData ? Object.keys(userData) : [],
       });
+      
+      // ✅ 프로필 이미지 필드를 통일하여 반환
+      if (userData) {
+        userData.profileImage = profileImageValue;
+        userData.profileUrl = profileImageValue;
+      }
       
       return {
         authenticated: true,
