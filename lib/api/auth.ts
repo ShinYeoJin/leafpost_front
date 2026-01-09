@@ -84,11 +84,13 @@ export async function login(email: string, password: string): Promise<LoginRespo
       body: JSON.stringify({ email, password }),
     });
     
-    // 모바일 환경에서 쿠키 설정 확인을 위한 디버깅
+    // ✅ 쿠키 기반 인증이므로 response body에 토큰이 없어도 성공으로 처리
+    // 백엔드가 쿠키로 토큰을 설정하므로 response.data는 선택적
     console.log("[Auth] login - 응답 성공:", {
       status: response.status,
       statusText: response.statusText,
       hasData: !!response.data,
+      data: response.data,
     });
     
     // 쿠키 확인 (document.cookie는 httpOnly 쿠키는 보이지 않지만, 디버깅용)
@@ -96,14 +98,17 @@ export async function login(email: string, password: string): Promise<LoginRespo
       console.log("[Auth] login - 현재 document.cookie:", document.cookie || "(쿠키 없음)");
       console.log("[Auth] login - 참고: httpOnly 쿠키는 document.cookie에서 보이지 않습니다.");
       
-      // 쿠키가 설정되기를 기다림 (sameSite: 'none' 쿠키는 비동기적으로 설정될 수 있음)
+      // ✅ 쿠키가 설정되기를 기다림 (sameSite: 'none' 쿠키는 비동기적으로 설정될 수 있음)
       // 브라우저가 Set-Cookie 헤더를 처리하는 시간을 확보
-      await new Promise(resolve => setTimeout(resolve, 300));
+      // 크로스 도메인 쿠키는 더 많은 시간이 필요할 수 있음
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       console.log("[Auth] login - 쿠키 설정 대기 완료");
     }
     
-    return response.data;
+    // ✅ response.data가 없어도 쿠키 기반 인증이므로 성공으로 처리
+    // 백엔드가 { accessToken, access } 형태로 반환하더라도 쿠키가 주된 인증 수단
+    return response.data || { accessToken: "", refreshToken: "" };
   } catch (error) {
     console.error("[Auth] login - 로그인 실패:", error);
     throw error;
