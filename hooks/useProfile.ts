@@ -165,9 +165,21 @@ export function useProfile() {
     setError(null);
 
     try {
+      // ✅ 타입 안전한 imageType 체크
+      let imageType: string;
+      if (profileImage === null || profileImage === undefined) {
+        imageType = "null/undefined";
+      } else if (typeof profileImage === "string") {
+        imageType = "string";
+      } else {
+        // 타입 단언을 사용하여 instanceof 체크
+        const profileImageAsAny = profileImage as any;
+        imageType = profileImageAsAny instanceof File ? "File" : typeof profileImage;
+      }
+      
       console.log("[Profile] updateProfile - 요청 시작:", {
         hasImage: !!profileImage,
-        imageType: profileImage instanceof File ? "File" : typeof profileImage,
+        imageType,
         endpoint: "/users/profile",
       });
       
@@ -189,15 +201,17 @@ export function useProfile() {
       let body: FormData | string;
       let headers: Record<string, string> = {};
       
-      if (profileImage instanceof File) {
+      // ✅ 타입 안전한 File 체크
+      const profileImageAsAny = profileImage as any;
+      if (profileImageAsAny instanceof File) {
         // File 객체인 경우 FormData로 전송
         body = new FormData();
-        body.append("profileImage", profileImage);
+        body.append("profileImage", profileImageAsAny);
         // FormData는 Content-Type을 브라우저가 자동으로 설정하므로 헤더에 포함하지 않음
         console.log("[Profile] updateProfile - File 객체를 FormData로 전송:", {
-          fileName: profileImage.name,
-          fileSize: profileImage.size,
-          fileType: profileImage.type,
+          fileName: profileImageAsAny.name,
+          fileSize: profileImageAsAny.size,
+          fileType: profileImageAsAny.type,
         });
       } else if (typeof profileImage === "string" && profileImage.trim()) {
         // base64 문자열인 경우 JSON으로 전송
