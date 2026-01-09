@@ -27,21 +27,22 @@ export default function LoginForm({ onSuccess, onError }: LoginFormProps) {
       
       console.log("[LoginForm] ✅ 로그인 API 성공");
       
-      // ✅ 쿠키가 브라우저에 반영되도록 충분한 대기
-      // sameSite: 'none' 쿠키는 크로스 도메인 설정이므로 브라우저 처리 시간이 필요함
-      // login 함수 내부에서 이미 2000ms 대기하므로 추가 대기
-      // 크로스 도메인 쿠키는 더 많은 시간이 필요할 수 있음
-      console.log("[LoginForm] 쿠키 반영 대기 중... (크로스 도메인 쿠키는 시간이 필요할 수 있음)");
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // ✅ 실제 인증 상태 확인: /auth/me API 호출
+      // 쿠키 반영 대기 대신 실제 API로 인증 상태 확인
+      console.log("[LoginForm] 인증 상태 확인 중... (/auth/me 호출)");
+      const { checkAuth } = await import("@/lib/api/auth");
+      const authResult = await checkAuth();
       
-      console.log("[LoginForm] ✅ 쿠키 반영 대기 완료 - /main으로 리다이렉트 시작");
-      
-      // ✅ 완전한 페이지 리로드를 통해 middleware가 새로 실행되도록 함
-      // router.push는 클라이언트 사이드 네비게이션이라 쿠키가 반영되지 않을 수 있음
-      // window.location.href는 완전한 페이지 리로드이므로 쿠키가 포함됨
-      // 이 시점에서 쿠키가 브라우저에 설정되어 있어야 middleware에서 확인 가능
-      console.log("[LoginForm] window.location.href = '/main' 실행");
-      window.location.href = "/main";
+      if (authResult.authenticated) {
+        console.log("[LoginForm] ✅ 인증 확인 성공 - /main으로 리다이렉트");
+        // ✅ 완전한 페이지 리로드를 통해 middleware가 새로 실행되도록 함
+        window.location.href = "/main";
+      } else {
+        console.error("[LoginForm] ❌ 인증 확인 실패 - 쿠키가 설정되지 않았거나 만료됨");
+        const errorMessage = "로그인에 실패했습니다. 다시 시도해주세요.";
+        setError(errorMessage);
+        onError?.(new Error(errorMessage));
+      }
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "로그인에 실패했습니다.";

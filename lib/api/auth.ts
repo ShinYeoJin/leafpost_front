@@ -1,5 +1,5 @@
 // leafpost/lib/api/auth.ts
-import { apiFetch } from "@/lib/api/client";
+import { apiFetch, ApiClientError } from "@/lib/api/client";
 
 type SignupRequest = {
   email: string;
@@ -84,24 +84,17 @@ export async function login(email: string, password: string): Promise<LoginRespo
       body: JSON.stringify({ email, password }),
     });
     
-    // ✅ 쿠키 기반 인증이므로 response body에 토큰이 없어도 성공으로 처리
-    // 백엔드가 쿠키로 토큰을 설정하므로 response.data는 선택적
+    // ✅ 로그인 API 성공 (201)
     console.log("[Auth] login - ✅ 로그인 API 성공 (201)");
-    console.log("[Auth] login - 참고: httpOnly 쿠키는 document.cookie에서 보이지 않습니다 (정상 동작)");
     console.log("[Auth] login - 쿠키는 백엔드에서 설정되었으며, 브라우저가 자동으로 저장합니다.");
     
-    // ✅ 쿠키가 설정되기를 기다림 (sameSite: 'none' 쿠키는 비동기적으로 설정될 수 있음)
-    // 브라우저가 Set-Cookie 헤더를 처리하는 시간을 확보
-    // 크로스 도메인 쿠키는 더 많은 시간이 필요할 수 있음
-    // 크로스 도메인 쿠키는 브라우저가 처리하는 데 시간이 걸릴 수 있으므로 충분한 대기 시간 필요
+    // ✅ 쿠키 반영을 위한 최소 대기 (크로스 도메인 쿠키는 브라우저 처리 시간 필요)
+    // 하지만 실제 인증 확인은 /auth/me로 하므로 짧은 대기만 필요
     if (typeof document !== "undefined") {
-      console.log("[Auth] login - 쿠키 반영 대기 중... (크로스 도메인 쿠키는 시간이 필요할 수 있음)");
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      console.log("[Auth] login - ✅ 쿠키 설정 대기 완료");
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
     
     // ✅ response.data가 없어도 쿠키 기반 인증이므로 성공으로 처리
-    // 백엔드가 { accessToken, access } 형태로 반환하더라도 쿠키가 주된 인증 수단
     return response.data || { accessToken: "", refreshToken: "" };
   } catch (error) {
     console.error("[Auth] login - 로그인 실패:", error);
@@ -116,6 +109,51 @@ export async function logout(): Promise<void> {
   await apiFetch("/auth/logout", { // <- /api 제거, 로그인 API처럼 일관되게
     method: "POST",
   });
+}
+
+/**
+ * 현재 사용자 인증 상태 확인
+ * 백엔드 라우트: GET /api/auth/me 또는 GET /api/users/me
+ * 쿠키 기반 인증이므로 쿠키가 유효하면 200, 없거나 만료되면 401
+ */
+export async function checkAuth(): Promise<{ authenticated: boolean; user?: any }> {
+  try {
+    // /auth/me 또는 /users/me 엔드포인트 시도
+    // 먼저 /auth/me 시도, 실패하면 /users/me 시도
+    let response;
+    try {
+      response = await apiFetch<any>("/auth/me", {
+        method: "GET",
+      });
+    } catch (error) {
+      // /auth/me가 없으면 /users/me 시도
+      console.log("[Auth] checkAuth - /auth/me 실패, /users/me 시도");
+      response = await apiFetch<any>("/users/me", {
+        method: "GET",
+      });
+    }
+    
+    console.log("[Auth] checkAuth - ✅ 인증 확인 성공:", {
+      status: response.status,
+      hasData: !!response.data,
+    });
+    
+    return {
+      authenticated: true,
+      user: response.data,
+    };
+  } catch (error) {
+    // 401이면 인증 실패, 다른 에러도 인증 실패로 처리
+    if (error instanceof ApiClientError && error.status === 401) {
+      console.log("[Auth] checkAuth - ❌ 인증 실패 (401): 쿠키가 없거나 만료됨");
+    } else {
+      console.error("[Auth] checkAuth - ❌ 인증 확인 실패:", error);
+    }
+    
+    return {
+      authenticated: false,
+    };
+  }
 }
 
 /**
