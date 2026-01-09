@@ -22,24 +22,48 @@ export default function MainPage() {
   // 클라이언트에서 인증 상태 확인
   useEffect(() => {
     const verifyAuth = async () => {
+      // ✅ 클라이언트 환경에서만 iOS 감지
+      const isIOS =
+        typeof window !== "undefined" &&
+        /iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+
       try {
         console.log("[MainPage] 인증 상태 확인 중...");
         const authResult = await checkAuth();
-        
+
         if (!authResult.authenticated) {
+          if (isIOS) {
+            // ✅ iOS 환경: checkAuth 실패해도 메인 접근 허용
+            console.warn(
+              "[MainPage] iOS 환경 - checkAuth 인증 실패지만 메인 접근을 허용합니다 (쿠키 전파 지연 가능성)"
+            );
+            setIsAuthChecked(true);
+            return;
+          }
+
           console.log("[MainPage] ❌ 인증 실패 - /login으로 리다이렉트");
           router.push("/login");
           return;
         }
-        
+
         console.log("[MainPage] ✅ 인증 확인 성공");
         setIsAuthChecked(true);
       } catch (err) {
         console.error("[MainPage] 인증 확인 중 에러:", err);
+
+        if (isIOS) {
+          // ✅ iOS 환경: 에러 발생 시에도 일단 메인 접근 허용
+          console.warn(
+            "[MainPage] iOS 환경 - checkAuth 호출 에러지만 메인 접근을 허용합니다"
+          );
+          setIsAuthChecked(true);
+          return;
+        }
+
         router.push("/login");
       }
     };
-    
+
     verifyAuth();
   }, [router]);
 
