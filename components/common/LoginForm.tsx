@@ -24,7 +24,13 @@ export default function LoginForm({ onSuccess, onError }: LoginFormProps) {
     try {
       const tokens = await login(email, password);
       onSuccess?.(tokens);
-      router.push("/main");
+      
+      // 쿠키가 브라우저에 반영되도록 짧은 대기
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // ✅ 완전한 페이지 리로드를 통해 middleware가 새로 실행되도록 함
+      // router.push는 클라이언트 사이드 네비게이션이라 쿠키가 반영되지 않을 수 있음
+      window.location.href = "/main";
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "로그인에 실패했습니다.";

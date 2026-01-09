@@ -80,7 +80,10 @@ export default function SignupPage() {
           };
           reader.readAsDataURL(profileImage);
         }
-        router.push("/main");
+        // 쿠키가 브라우저에 반영되도록 짧은 대기
+        await new Promise(resolve => setTimeout(resolve, 200));
+        // ✅ 완전한 페이지 리로드를 통해 middleware가 새로 실행되도록 함
+        window.location.href = "/main";
       } catch (retryErr) {
         // 재시도 실패는 기존 에러 처리 로직과 동일하게 처리
         if (retryErr instanceof ApiClientError) {
@@ -120,8 +123,10 @@ export default function SignupPage() {
         };
         reader.readAsDataURL(profileImage);
       }
-      // /main 페이지로 자동 redirect
-      router.push("/main");
+      // 쿠키가 브라우저에 반영되도록 짧은 대기
+      await new Promise(resolve => setTimeout(resolve, 200));
+      // ✅ 완전한 페이지 리로드를 통해 middleware가 새로 실행되도록 함
+      window.location.href = "/main";
     } catch (err) {
       if (err instanceof ApiClientError) {
         const errorInfo = handleApiError(err, retryAction);

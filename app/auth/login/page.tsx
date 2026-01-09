@@ -22,11 +22,13 @@ export default function LoginPage() {
       // 사용자 이메일만 localStorage에 저장 (UI 표시용)
       localStorage.setItem("userEmail", email);
       
-      // 모바일 환경에서 쿠키 설정 확인을 위한 짧은 대기
-      // (쿠키 설정이 비동기적으로 완료될 수 있음)
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // 쿠키가 브라우저에 반영되도록 짧은 대기
+      // (Set-Cookie 헤더가 브라우저에 적용되는 데 시간이 걸릴 수 있음)
+      await new Promise(resolve => setTimeout(resolve, 200));
       
-      router.push("/main");
+      // ✅ 완전한 페이지 리로드를 통해 middleware가 새로 실행되도록 함
+      // router.push는 클라이언트 사이드 네비게이션이라 쿠키가 반영되지 않을 수 있음
+      window.location.href = "/main";
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "로그인에 실패했습니다.";
