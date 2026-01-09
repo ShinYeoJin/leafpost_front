@@ -47,82 +47,25 @@ export default function LoginPage() {
       localStorage.setItem("userEmail", email);
       
       console.log("[LoginPage] ✅ 로그인 API 성공");
-      
-      // ✅ 실제 인증 상태 확인: /users/me API 호출
-      // 쿠키 반영 대기 대신 실제 API로 인증 상태 확인
-      console.log("[LoginPage] 인증 상태 확인 중... (/users/me 호출)");
-      
-      // ✅ iOS 환경에서는 쿠키 설정 대기 시간 추가
+
+      // ✅ 로그인 성공 판정은 /auth/login 응답(201/200) 기준으로만 수행
+      //    iOS 환경에서는 /users/me(/auth/me) 호출 실패로 인해 로그인 실패로 처리되지 않도록 분리
+
+      // ✅ iOS 환경에서는 쿠키 설정 대기 시간만 두고 바로 /main으로 이동
       if (isIOS) {
+        console.log("[LoginPage] iOS 환경 - /auth/me에 의존하지 않고 로그인 성공으로 처리");
         console.log("[LoginPage] iOS 환경 - 쿠키 설정 대기 중... (3초)");
-        await new Promise(resolve => setTimeout(resolve, 3000)); // iOS는 더 긴 대기 시간
-        console.log("[LoginPage] iOS 환경 - 쿠키 설정 대기 완료");
-      }
-      
-      const { checkAuth } = await import("@/lib/api/auth");
-      let authResult: { authenticated: boolean; user?: any } | undefined;
-      let retryCount = 0;
-      const maxRetries = isIOS ? 3 : 1; // iOS는 재시도 2회 추가 (총 3회)
-      
-      // ✅ iOS 환경에서는 재시도 로직 추가
-      while (retryCount < maxRetries) {
-        try {
-          console.log(`[LoginPage] 인증 확인 시도 ${retryCount + 1}/${maxRetries}`);
-          authResult = await checkAuth();
-          
-          if (authResult && authResult.authenticated) {
-            console.log(`[LoginPage] ✅ 인증 확인 성공 (시도 ${retryCount + 1}/${maxRetries})`);
-            break; // 인증 성공 시 루프 종료
-          } else {
-            console.warn(`[LoginPage] 인증 확인 실패 (시도 ${retryCount + 1}/${maxRetries}): authenticated=false`);
-          }
-        } catch (err) {
-          console.error(`[LoginPage] 인증 확인 에러 (시도 ${retryCount + 1}/${maxRetries}):`, err);
-          
-          // ✅ 401 에러인 경우 쿠키 문제로 간주
-          if (err instanceof Error && err.message.includes("401")) {
-            console.error("[LoginPage] 401 에러 - 쿠키가 설정되지 않았거나 만료됨");
-          }
-        }
-        
-        retryCount++;
-        if (retryCount < maxRetries) {
-          const waitTime = isIOS ? (retryCount + 1) * 1000 : 1000; // iOS는 점진적 대기 시간 증가
-          console.log(`[LoginPage] 재시도 대기 중... (${waitTime}ms)`);
-          await new Promise(resolve => setTimeout(resolve, waitTime));
-        }
-      }
-      
-      if (authResult && authResult.authenticated) {
-        console.log("[LoginPage] ✅ 인증 확인 성공 - /main으로 리다이렉트");
-        // ✅ 크로스 도메인 쿠키 문제로 middleware에서 인증 체크 불가능
-        // 클라이언트에서 직접 /main으로 이동
-        console.log("[LoginPage] window.location.href = '/main' 실행");
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+        console.log("[LoginPage] iOS 환경 - 쿠키 설정 대기 완료, /main으로 이동");
         window.location.href = "/main";
-        return; // ✅ 리다이렉트 후 즉시 종료
-      } else {
-        console.error("[LoginPage] ❌ 인증 확인 실패 - 쿠키가 설정되지 않았거나 만료됨");
-        console.error("[LoginPage] 최종 인증 결과:", {
-          authResult,
-          retryCount,
-          maxRetries,
-        });
-        
-        if (isMobile) {
-          console.error("[LoginPage] 모바일 환경 - 추가 확인 필요:");
-          console.error("[LoginPage] - HTTPS 환경:", isHTTPS);
-          console.error("[LoginPage] - SameSite=None, Secure=true 쿠키는 HTTPS 환경에서만 작동합니다");
-        }
-        if (isIOS) {
-          console.error("[LoginPage] iOS 환경 - 추가 확인 필요:");
-          console.error("[LoginPage] - iOS Safari는 ITP로 인해 쿠키가 차단될 수 있음");
-          console.error("[LoginPage] - 사용자가 사이트를 직접 방문한 경우에만 쿠키가 설정됨");
-          console.error("[LoginPage] - 쿠키 설정 후 다음 요청에서 쿠키 포함 여부 확인 필요");
-          console.error("[LoginPage] - 재시도 후에도 실패한 경우, 백엔드 쿠키 설정 확인 필요");
-          console.error("[LoginPage] - iOS Safari 설정에서 쿠키 허용 여부 확인 필요");
-        }
-        setError("로그인에 실패했습니다. 다시 시도해주세요.");
+        return;
       }
+
+      // ✅ iOS 이외 환경: 기존 PC/Android 흐름 유지하되,
+      //    /users/me 실패가 로그인 실패로 이어지지 않도록 바로 /main으로 이동
+      console.log("[LoginPage] 비 iOS 환경 - 로그인 성공으로 간주, /main으로 이동");
+      window.location.href = "/main";
+      return;
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "로그인에 실패했습니다.";
